@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { Mail, Phone, MapPin, Send, MessageCircle } from "lucide-react";
 import toast from "react-hot-toast";
-import { useSidebar } from "../../components/dashboard/DashboardLayout";
+import { useSidebar } from "../../components/layout/DashboardLayout";
 
 const ContactPage = () => {
   const { sidebarOpen } = useSidebar();

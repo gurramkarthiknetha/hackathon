@@ -4,7 +4,7 @@ import { useAuthStore } from "../../store/authStore";
 import { formatDate } from "../../utils/date";
 import { User, Mail, Calendar, Edit3, Save, X, Camera } from "lucide-react";
 import toast from "react-hot-toast";
-import { useSidebar } from "../../components/dashboard/DashboardLayout";
+import { useSidebar } from "../../components/layout/DashboardLayout";
 
 const ProfilePage = () => {
   const { user, updateProfile, isLoading } = useAuthStore();

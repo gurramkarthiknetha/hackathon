@@ -1,14 +1,14 @@
 import { Navigate, Route, Routes } from "react-router-dom";
-import FloatingShape from "./components/FloatingShape";
-import SignUpPage from "./pages/SignUpPage";
-import LoginPage from "./pages/LoginPage";
-import EmailVerificationPage from "./pages/EmailVerificationPage";
-import ForgotPasswordPage from "./pages/ForgotPasswordPage";
-import ResetPasswordPage from "./pages/ResetPasswordPage";
-import LoadingSpinner from "./components/LoadingSpinner";
+import FloatingShape from "./components/ui/FloatingShape";
+import SignUpPage from "./pages/auth/SignUpPage";
+import LoginPage from "./pages/auth/LoginPage";
+import EmailVerificationPage from "./pages/auth/EmailVerificationPage";
+import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
+import LoadingSpinner from "./components/ui/LoadingSpinner";
 
 // Dashboard Layout and Pages
-import DashboardLayout from "./components/dashboard/DashboardLayout";
+import DashboardLayout from "./components/layout/DashboardLayout";
 import HomePage from "./pages/dashboard/HomePage";
 import ProfilePage from "./pages/dashboard/ProfilePage";
 import ContactPage from "./pages/dashboard/ContactPage";

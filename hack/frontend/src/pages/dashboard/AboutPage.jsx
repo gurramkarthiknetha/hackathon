@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Code, Users, Target, Award, Github, Linkedin, Twitter } from "lucide-react";
-import { useSidebar } from "../../components/dashboard/DashboardLayout";
+import { useSidebar } from "../../components/layout/DashboardLayout";
 
 const AboutPage = () => {
   const { sidebarOpen } = useSidebar();

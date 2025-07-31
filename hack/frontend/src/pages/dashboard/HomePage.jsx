@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { useAuthStore } from "../../store/authStore";
 import { Calendar, Clock, Activity, TrendingUp, Users } from "lucide-react";
-import { useSidebar } from "../../components/dashboard/DashboardLayout";
+import { useSidebar } from "../../components/layout/DashboardLayout";
 
 const HomePage = () => {
   const { user } = useAuthStore();
