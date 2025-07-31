@@ -17,6 +17,14 @@ build/
 *.tgz
 *.tar.gz
 
+# Frontend specific
+hack/frontend/dist/
+hack/frontend/.env
+hack/frontend/.env.local
+hack/frontend/.env.development.local
+hack/frontend/.env.test.local
+hack/frontend/.env.production.local
+
 # IDE files
 .vscode/
 .idea/
