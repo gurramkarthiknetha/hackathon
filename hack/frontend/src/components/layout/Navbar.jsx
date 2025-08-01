@@ -1,11 +1,16 @@
 import { motion } from "framer-motion";
 import { Menu, X, User, LogOut, Bell } from "lucide-react";
 import { useAuthStore } from "../../store/authStore";
+import { useSocket } from "../../hooks/useSocket";
 import { useEffect, useState } from "react";
+import NotificationDropdown from "../notifications/NotificationDropdown";
 
 const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
   const { user, logout } = useAuthStore();
+  const { incidents, systemAlerts } = useSocket();
   const [isMobile, setIsMobile] = useState(false);
+  const [notificationOpen, setNotificationOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     const checkScreenSize = () => {
@@ -16,6 +21,12 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
     window.addEventListener('resize', checkScreenSize);
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
+
+  // Calculate unread notifications count
+  useEffect(() => {
+    const totalUnread = incidents.length + systemAlerts.length;
+    setUnreadCount(totalUnread);
+  }, [incidents, systemAlerts]);
 
   const handleLogout = () => {
     logout();
@@ -59,10 +70,25 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
         {/* Right side - User menu */}
         <div className="flex items-center space-x-4">
           {/* Notifications */}
-          <button className="p-2 rounded-lg text-gray-300 hover:text-white hover:bg-gray-800 transition-colors duration-200 relative">
-            <Bell size={20} />
-            <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setNotificationOpen(!notificationOpen)}
+              className="p-2 rounded-lg text-gray-300 hover:text-white hover:bg-gray-800 transition-colors duration-200 relative"
+            >
+              <Bell size={20} />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-xs text-white font-medium">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
+            </button>
+
+            <NotificationDropdown
+              isOpen={notificationOpen}
+              onClose={() => setNotificationOpen(false)}
+              onToggle={() => setNotificationOpen(!notificationOpen)}
+            />
+          </div>
 
           {/* User dropdown */}
           <div className="relative group">

@@ -7,7 +7,8 @@
 		"dev": "NODE_ENV=development nodemon index.js",
 		"start": "NODE_ENV=production node index.js",
 		"build": "npm install && npm install --prefix frontend && npm run build --prefix frontend",
-		"seed-monitoring": "node scripts/seedMonitoringData.js"
+		"seed-monitoring": "node scripts/seedMonitoringData.js",
+		"test:notifications": "node scripts/testEmailNotifications.js"
 	},
 	"keywords": [],
 	"author": "",

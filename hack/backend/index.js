@@ -20,6 +20,8 @@ import authRoutes from "./routes/auth.route.js";
 import dashboardRoutes from "./routes/dashboard.route.js";
 import monitoringRoutes from "./routes/monitoring.route.js";
 import mapsRoutes from "./routes/maps.route.js";
+import emailNotificationSettingsRoutes from "./routes/emailNotificationSettings.route.js";
+import notificationRoutes from "./routes/notification.route.js";
 
 dotenv.config();
 
@@ -62,6 +64,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/monitoring", monitoringRoutes);
 app.use("/api/maps", mapsRoutes);
+app.use("/api/email-settings", emailNotificationSettingsRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // Global error handler (must be after all routes)
 app.use(globalErrorHandler);

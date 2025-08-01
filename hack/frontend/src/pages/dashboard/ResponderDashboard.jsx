@@ -311,13 +311,20 @@ const ResponderDashboard = () => {
 			{/* Content Area */}
 			<div className="flex-1 lg:bg-gray-800/60 lg:backdrop-blur-xl lg:border lg:border-gray-700/50 lg:rounded-b-xl">
 				{/* Desktop Layout */}
-				<div className="hidden lg:grid lg:grid-cols-2 lg:gap-6 lg:p-6">
-					<div>
-						<AssignedTasks currentLocation={currentLocation} />
-					</div>
-					<div className="space-y-6">
+				<div className="hidden lg:block lg:p-6">
+					{/* Full Width Map */}
+					<div className="mb-6">
 						<ResponderMap currentLocation={currentLocation} />
-						<QuickActions />
+					</div>
+
+					{/* Two Column Layout for Tasks and Actions */}
+					<div className="grid grid-cols-2 gap-6">
+						<div>
+							<AssignedTasks currentLocation={currentLocation} />
+						</div>
+						<div>
+							<QuickActions />
+						</div>
 					</div>
 				</div>
 

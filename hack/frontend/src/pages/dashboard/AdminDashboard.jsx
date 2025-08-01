@@ -2,17 +2,19 @@ import { motion } from "framer-motion";
 import { useAuthStore } from "../../store/authStore";
 import { useSidebar } from "../../components/layout/DashboardLayout";
 import { useState, useEffect } from "react";
-import { 
-	Users, 
-	Shield, 
-	Activity, 
-	TrendingUp, 
-	UserCheck, 
+import {
+	Users,
+	Shield,
+	Activity,
+	TrendingUp,
+	UserCheck,
 	UserX,
 	Settings,
 	BarChart3,
 	AlertTriangle
 } from "lucide-react";
+import AdminQuickActions from "../../components/admin/AdminQuickActions";
+import NotificationHistory from "../../components/admin/NotificationHistory";
 
 const AdminDashboard = () => {
 	const { user, fetchDashboardData } = useAuthStore();
@@ -128,6 +130,16 @@ const AdminDashboard = () => {
 				))}
 			</div>
 
+			{/* Quick Actions */}
+			<motion.div
+				initial={{ opacity: 0, y: 20 }}
+				animate={{ opacity: 1, y: 0 }}
+				transition={{ duration: 0.5, delay: 0.5 }}
+				className="mb-8"
+			>
+				<AdminQuickActions />
+			</motion.div>
+
 			{/* Content Grid */}
 			<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 				{/* Role Distribution */}
@@ -219,6 +231,16 @@ const AdminDashboard = () => {
 						<span className="text-white font-medium">View Reports</span>
 					</button>
 				</div>
+			</motion.div>
+
+			{/* Notification History */}
+			<motion.div
+				initial={{ opacity: 0, y: 20 }}
+				animate={{ opacity: 1, y: 0 }}
+				transition={{ duration: 0.5, delay: 0.7 }}
+				className="mt-8"
+			>
+				<NotificationHistory />
 			</motion.div>
 		</div>
 	);

@@ -150,7 +150,7 @@ const ResponderMap = ({ currentLocation }) => {
   };
 
   return (
-    <div className="h-full flex flex-col bg-gray-800/60 backdrop-blur-xl lg:rounded-xl lg:border lg:border-gray-700/50">
+    <div className="w-full h-[400px] lg:h-[500px] flex flex-col bg-gray-800/60 backdrop-blur-xl lg:rounded-xl lg:border lg:border-gray-700/50">
       {/* Header */}
       <div className="p-4 border-b border-gray-700/50">
         <div className="flex items-center justify-between">

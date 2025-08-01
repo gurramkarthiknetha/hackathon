@@ -1,6 +1,7 @@
 import { Incident } from "../models/incident.model.js";
 import { Zone } from "../models/zone.model.js";
 import { User } from "../models/user.model.js";
+import { sendIncidentApprovalNotification } from "../services/alertEmailService.js";
 
 // Simulate AI query processing (in a real implementation, this would call an AI service)
 export const processAIQuery = async (req, res) => {
@@ -244,6 +245,17 @@ export const approveIncident = async (req, res) => {
 
     await incident.save();
     await incident.populate(["assignedTo", "approvedBy"], "name role");
+
+    // Get the user who approved/dismissed the incident for email notification
+    const approvedByUser = await User.findById(userId).select("name role");
+
+    // Send email notifications about the approval decision
+    try {
+      await sendIncidentApprovalNotification(incident, approvedByUser, approved);
+    } catch (emailError) {
+      console.error("Failed to send incident approval email notifications:", emailError);
+      // Don't fail the approval if email fails
+    }
 
     res.status(200).json({
       success: true,

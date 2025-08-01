@@ -37,6 +37,7 @@ import AnalyticsReportsPage from "./pages/admin/AnalyticsReportsPage";
 import SystemSettingsPage from "./pages/admin/SystemSettingsPage";
 import SecurityAuditPage from "./pages/admin/SecurityAuditPage";
 import ZoneManagementPage from "./pages/admin/ZoneManagementPage";
+import NotificationManagementPage from "./pages/admin/NotificationManagementPage";
 import { Toaster } from "react-hot-toast";
 import { useAuthStore } from "./store/authStore";
 import { useEffect } from "react";
@@ -258,6 +259,14 @@ function App() {
 						element={
 							<RoleProtectedRoute allowedRoles={['admin']}>
 								<ZoneManagementPage />
+							</RoleProtectedRoute>
+						}
+					/>
+					<Route
+						path='admin/notifications'
+						element={
+							<RoleProtectedRoute allowedRoles={['admin']}>
+								<NotificationManagementPage />
 							</RoleProtectedRoute>
 						}
 					/>

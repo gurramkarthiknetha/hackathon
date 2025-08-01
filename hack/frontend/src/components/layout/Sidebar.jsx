@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Home, User, Mail, Info, X, Camera, AlertTriangle, Map, Brain, Clock, Target, Navigation, Zap, Radio, FileText, Users, Settings, BarChart3, Shield } from "lucide-react";
+import { Home, User, Mail, Info, X, Camera, AlertTriangle, Map, Brain, Clock, Target, Navigation, Zap, Radio, FileText, Users, Settings, BarChart3, Shield, Bell } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useAuthStore } from "../../store/authStore";
@@ -22,7 +22,6 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
   const baseMenuItems = [
     { icon: Home, label: "Home", path: "/dashboard" },
     { icon: User, label: "Profile", path: "/dashboard/profile" },
-    { icon: Mail, label: "Contact Us", path: "/dashboard/contact" },
     { icon: Info, label: "About Us", path: "/dashboard/about" },
   ];
 
@@ -35,7 +34,6 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
     { icon: Brain, label: "AI Command Center", path: "/dashboard/operator/command-center" },
     { icon: Clock, label: "Incident Timeline", path: "/dashboard/operator/timeline" },
     { icon: User, label: "Profile", path: "/dashboard/profile" },
-    { icon: Mail, label: "Contact Us", path: "/dashboard/contact" },
     { icon: Info, label: "About Us", path: "/dashboard/about" },
   ];
 
@@ -48,7 +46,6 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
     { icon: Radio, label: "Status & Communication", path: "/dashboard/responder/communication" },
     { icon: FileText, label: "Incident Reports", path: "/dashboard/responder/reports" },
     { icon: User, label: "Profile", path: "/dashboard/profile" },
-    { icon: Mail, label: "Contact Us", path: "/dashboard/contact" },
     { icon: Info, label: "About Us", path: "/dashboard/about" },
   ];
 
@@ -56,12 +53,12 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
   const adminMenuItems = [
     { icon: Home, label: "Home", path: "/dashboard" },
     { icon: Users, label: "User Management", path: "/dashboard/admin/users" },
+    { icon: Bell, label: "Notifications", path: "/dashboard/admin/notifications" },
     { icon: BarChart3, label: "Analytics & Reports", path: "/dashboard/admin/analytics" },
     { icon: Settings, label: "System Settings", path: "/dashboard/admin/settings" },
     { icon: Shield, label: "Security & Audit", path: "/dashboard/admin/security" },
     { icon: Map, label: "Zone Management", path: "/dashboard/admin/zones" },
     { icon: User, label: "Profile", path: "/dashboard/profile" },
-    { icon: Mail, label: "Contact Us", path: "/dashboard/contact" },
     { icon: Info, label: "About Us", path: "/dashboard/about" },
   ];
 

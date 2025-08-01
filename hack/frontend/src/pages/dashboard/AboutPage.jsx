@@ -34,27 +34,27 @@ const AboutPage = () => {
 
   const teamMembers = [
     {
-      name: "Alex Johnson",
-      role: "Lead Developer",
+      name: "Gurram Karthik",
+      role: "Lead Developer & Built an Responder Role",
       description: "Full-stack developer with expertise in React, Node.js, and emergency response systems.",
       social: { github: "#", linkedin: "#", twitter: "#" }
     },
     {
-      name: "Sarah Chen",
-      role: "UI/UX Designer",
-      description: "Creative designer focused on intuitive interfaces for high-stress emergency situations.",
+      name: "Gurrapu Vishnu",
+      role: "Built an Operator Role",
+      description: "Full-stack developer with expertise in React, Node.js, and emergency response systems.",
       social: { github: "#", linkedin: "#", twitter: "#" }
     },
     {
-      name: "Mike Rodriguez",
-      role: "Backend Engineer",
-      description: "Systems architect specializing in real-time data processing and scalable infrastructure.",
+      name: "Rishith Reddy",
+      role: "Built an Admin Role",
+      description: "Full-stack developer with expertise in React, Node.js, and emergency response systems.",
       social: { github: "#", linkedin: "#", twitter: "#" }
     },
     {
-      name: "Emily Davis",
-      role: "Product Manager",
-      description: "Product strategist with background in emergency services and crisis management.",
+      name: "Shiva Reddy",
+      role: "Real-Time Video Analysis with YOLO",
+      description: "Detects objects in video and returns results as JSON.",
       social: { github: "#", linkedin: "#", twitter: "#" }
     }
   ];
@@ -289,9 +289,9 @@ const AboutPage = () => {
                 <span className="text-gray-300">AWS</span>
               </div>
               <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
-                <span className="text-gray-300">Kubernetes</span>
-              </div>
+                {/* <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
+                {/* <span className="text-gray-300">Kubernetes</span> */}
+              </div> 
               <div className="flex items-center space-x-2">
                 <div className="w-2 h-2 bg-green-400 rounded-full"></div>
                 <span className="text-gray-300">Redis</span>

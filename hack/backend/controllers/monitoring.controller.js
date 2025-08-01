@@ -1,6 +1,11 @@
 import { Incident } from "../models/incident.model.js";
 import { Zone } from "../models/zone.model.js";
 import { User } from "../models/user.model.js";
+import {
+  sendIncidentCreatedNotification,
+  sendIncidentAssignedNotification,
+  sendIncidentStatusUpdateNotification
+} from "../services/alertEmailService.js";
 
 // Get all active incidents
 export const getActiveIncidents = async (req, res) => {
@@ -100,6 +105,14 @@ export const createIncident = async (req, res) => {
     // Populate the created incident
     await incident.populate("assignedTo", "name role");
 
+    // Send email notifications to relevant users
+    try {
+      await sendIncidentCreatedNotification(incident);
+    } catch (emailError) {
+      console.error("Failed to send incident created email notifications:", emailError);
+      // Don't fail the incident creation if email fails
+    }
+
     res.status(201).json({
       success: true,
       data: incident,
@@ -129,6 +142,9 @@ export const updateIncidentStatus = async (req, res) => {
       });
     }
 
+    // Store previous status for email notification
+    const previousStatus = incident.status;
+
     // Update status
     incident.status = status;
 
@@ -145,7 +161,7 @@ export const updateIncidentStatus = async (req, res) => {
     if (status === "resolved") {
       incident.resolvedAt = new Date();
       incident.resolvedBy = userId;
-      
+
       // Calculate response time if assigned
       if (incident.assignedAt) {
         const responseTimeMs = incident.resolvedAt - incident.assignedAt;
@@ -155,6 +171,17 @@ export const updateIncidentStatus = async (req, res) => {
 
     await incident.save();
     await incident.populate(["assignedTo", "resolvedBy", "approvedBy"], "name role");
+
+    // Get the user who updated the incident for email notification
+    const updatedByUser = await User.findById(userId).select("name role");
+
+    // Send email notifications about the status update
+    try {
+      await sendIncidentStatusUpdateNotification(incident, previousStatus, updatedByUser, notes);
+    } catch (emailError) {
+      console.error("Failed to send incident status update email notifications:", emailError);
+      // Don't fail the status update if email fails
+    }
 
     res.status(200).json({
       success: true,
@@ -199,6 +226,14 @@ export const assignIncident = async (req, res) => {
 
     await incident.save();
     await incident.populate("assignedTo", "name role phoneNumber");
+
+    // Send email notifications about the assignment
+    try {
+      await sendIncidentAssignedNotification(incident, responder);
+    } catch (emailError) {
+      console.error("Failed to send incident assigned email notifications:", emailError);
+      // Don't fail the assignment if email fails
+    }
 
     res.status(200).json({
       success: true,
