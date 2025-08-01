@@ -28,8 +28,8 @@ const server = createServer(app);
 const io = new Server(server, {
 	cors: {
 		origin: process.env.NODE_ENV === "production"
-			? process.env.CLIENT_URL
-			: ["http://localhost:5173", "http://10.100.14.125:5173/","https://aieventmonitor.vercel.app/"],
+			? ["https://aieventmonitor.vercel.app", process.env.CLIENT_URL].filter(Boolean)
+			: ["http://localhost:5173", "http://10.100.14.125:5173/", "https://aieventmonitor.vercel.app"],
 		methods: ["GET", "POST"]
 	}
 });
@@ -46,8 +46,8 @@ app.use(sanitizeRequest);
 // CORS configuration
 const corsOptions = {
 	origin: process.env.NODE_ENV === "production"
-		? process.env.CLIENT_URL
-		: ["http://localhost:5173", "http://10.100.14.125:5173/"],
+		? ["https://aieventmonitor.vercel.app", process.env.CLIENT_URL].filter(Boolean)
+		: ["http://localhost:5173", "http://10.100.14.125:5173/", "https://aieventmonitor.vercel.app"],
 	credentials: true,
 	optionsSuccessStatus: 200,
 };
