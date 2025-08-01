@@ -50,7 +50,6 @@ const GoogleMap = ({
     const defaultCenter = { lat: 40.7128, lng: -74.0060 }; // NYC default
 
     if (!centerCoords || typeof centerCoords !== 'object') {
-      console.log('GoogleMap: Invalid center object, using default');
       return defaultCenter;
     }
 

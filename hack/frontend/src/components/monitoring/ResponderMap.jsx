@@ -66,7 +66,6 @@ const ResponderMap = ({ currentLocation }) => {
     };
 
     if (!currentLocation) {
-      console.log('ResponderMap: No currentLocation, using default position');
       return defaultPosition;
     }
 
@@ -75,7 +74,6 @@ const ResponderMap = ({ currentLocation }) => {
     const lng = currentLocation.lng || currentLocation.longitude;
 
     if (typeof lat === 'number' && typeof lng === 'number' && isFinite(lat) && isFinite(lng)) {
-      console.log('ResponderMap: Using currentLocation coordinates:', { lat, lng });
       return {
         lat,
         lng,
@@ -83,7 +81,6 @@ const ResponderMap = ({ currentLocation }) => {
         y: currentLocation.y || 60  // Keep legacy position or default
       };
     } else {
-      console.log('ResponderMap: Invalid currentLocation coordinates:', currentLocation, 'using default');
       return defaultPosition;
     }
   })();

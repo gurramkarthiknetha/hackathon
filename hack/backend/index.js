@@ -29,7 +29,7 @@ const io = new Server(server, {
 	cors: {
 		origin: process.env.NODE_ENV === "production"
 			? process.env.CLIENT_URL
-			: ["http://localhost:5173", "http://10.100.14.125:5173/"],
+			: ["http://localhost:5173", "http://10.100.14.125:5173/","https://aieventmonitor.vercel.app/"],
 		methods: ["GET", "POST"]
 	}
 });

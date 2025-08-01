@@ -19,7 +19,6 @@ const MonitoringMap = ({
     const defaultCenter = { lat: 40.7128, lng: -74.0060 };
 
     if (!currentLocation) {
-      console.log('MonitoringMap: No currentLocation provided, using default center:', defaultCenter);
       return defaultCenter;
     }
 
@@ -31,10 +30,8 @@ const MonitoringMap = ({
 
     if (lat !== null && lng !== null && isFinite(lat) && isFinite(lng)) {
       const validCenter = { lat, lng };
-      console.log('MonitoringMap: Using valid currentLocation:', validCenter);
       return validCenter;
     } else {
-      console.log('MonitoringMap: Invalid currentLocation coordinates:', currentLocation, 'using default center:', defaultCenter);
       return defaultCenter;
     }
   });
