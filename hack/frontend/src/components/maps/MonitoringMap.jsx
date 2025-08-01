@@ -85,15 +85,12 @@ const MonitoringMap = ({
       lat: currentLocation.lat || currentLocation.latitude,
       lng: currentLocation.lng || currentLocation.longitude,
       title: 'Your Location',
-      icon: {
-        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="12" cy="12" r="8" fill="#06b6d4" stroke="#ffffff" stroke-width="2"/>
-            <circle cx="12" cy="12" r="3" fill="#ffffff"/>
-          </svg>
-        `),
-        scaledSize: window.google && window.google.maps ? new window.google.maps.Size(24, 24) : { width: 24, height: 24 }
-      },
+      icon: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="12" cy="12" r="8" fill="#06b6d4" stroke="#ffffff" stroke-width="2"/>
+          <circle cx="12" cy="12" r="3" fill="#ffffff"/>
+        </svg>
+      `),
       infoWindow: '<div class="p-2"><h3 class="font-semibold text-gray-800">Your Location</h3></div>'
     });
   }

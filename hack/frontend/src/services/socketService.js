@@ -5,11 +5,44 @@ class SocketService {
     this.socket = null;
     this.isConnected = false;
     this.listeners = new Map();
+    this.isConnecting = false;
+    this.currentUser = null;
+    this.connectionTimeout = null;
   }
 
   connect(user) {
-    if (this.socket) {
+    // Prevent multiple connections or connection attempts
+    if (this.isConnecting) {
+      console.log('Connection already in progress, skipping...');
+      return this.socket;
+    }
+
+    // Check if we're already connected with the same user
+    if (this.currentUser && this.currentUser.id === user.id && this.socket && this.socket.connected) {
+      console.log('Already connected with the same user, skipping...');
+      return this.socket;
+    }
+
+    // If socket exists and is connected but different user, disconnect first
+    if (this.socket && this.socket.connected && this.currentUser && this.currentUser.id !== user.id) {
+      console.log('Switching user, disconnecting current connection...');
       this.disconnect();
+    }
+
+    this.isConnecting = true;
+    this.currentUser = user;
+
+    // Clear any existing connection timeout
+    if (this.connectionTimeout) {
+      clearTimeout(this.connectionTimeout);
+      this.connectionTimeout = null;
+    }
+
+    // Clean up existing socket if any
+    if (this.socket) {
+      this.socket.removeAllListeners();
+      this.socket.disconnect();
+      this.socket = null;
     }
 
     // Remove /api from the URL for socket connection
@@ -18,13 +51,20 @@ class SocketService {
 
     this.socket = io(serverUrl, {
       withCredentials: true,
-      transports: ['websocket', 'polling']
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      maxReconnectionAttempts: 3,
+      timeout: 10000,
+      forceNew: false
     });
 
     this.socket.on('connect', () => {
       console.log('Connected to server:', this.socket.id);
       this.isConnected = true;
-      
+      this.isConnecting = false;
+
       // Join appropriate rooms based on user role
       this.socket.emit('join-room', {
         userId: user.id,
@@ -33,29 +73,65 @@ class SocketService {
       });
     });
 
-    this.socket.on('disconnect', () => {
-      console.log('Disconnected from server');
+    this.socket.on('disconnect', (reason) => {
+      console.log('Disconnected from server:', reason);
       this.isConnected = false;
+      this.isConnecting = false;
     });
 
     this.socket.on('connect_error', (error) => {
       console.error('Connection error:', error);
       this.isConnected = false;
+      this.isConnecting = false;
+    });
+
+    this.socket.on('reconnect', (attemptNumber) => {
+      console.log('Reconnected to server after', attemptNumber, 'attempts');
+      this.isConnected = true;
+      this.isConnecting = false;
+    });
+
+    this.socket.on('reconnect_error', (error) => {
+      console.error('Reconnection error:', error);
+    });
+
+    this.socket.on('reconnect_failed', () => {
+      console.error('Failed to reconnect to server');
+      this.isConnected = false;
+      this.isConnecting = false;
     });
 
     // Set up event listeners
     this.setupEventListeners();
 
+    // Set a timeout to reset connecting state if connection takes too long
+    this.connectionTimeout = setTimeout(() => {
+      if (this.isConnecting) {
+        console.warn('Connection timeout, resetting connecting state');
+        this.isConnecting = false;
+      }
+    }, 15000);
+
     return this.socket;
   }
 
   disconnect() {
+    // Clear connection timeout
+    if (this.connectionTimeout) {
+      clearTimeout(this.connectionTimeout);
+      this.connectionTimeout = null;
+    }
+
     if (this.socket) {
+      this.socket.removeAllListeners();
       this.socket.disconnect();
       this.socket = null;
-      this.isConnected = false;
-      this.listeners.clear();
     }
+
+    this.isConnected = false;
+    this.isConnecting = false;
+    this.currentUser = null;
+    this.listeners.clear();
   }
 
   setupEventListeners() {
@@ -149,12 +225,33 @@ class SocketService {
     return this.isConnected && this.socket?.connected;
   }
 
+  isSocketConnecting() {
+    return this.isConnecting;
+  }
+
   getSocketId() {
     return this.socket?.id;
   }
 }
 
-// Create singleton instance
-const socketService = new SocketService();
+// Create singleton instance with global reference to prevent React StrictMode issues
+let socketServiceInstance = null;
+
+const getSocketService = () => {
+  if (!socketServiceInstance) {
+    socketServiceInstance = new SocketService();
+  }
+  return socketServiceInstance;
+};
+
+// Store reference globally to persist across React re-renders
+if (typeof window !== 'undefined') {
+  if (!window.__socketService) {
+    window.__socketService = getSocketService();
+  }
+  socketServiceInstance = window.__socketService;
+}
+
+const socketService = getSocketService();
 
 export default socketService;

@@ -112,18 +112,53 @@ const GoogleMap = ({
     if (!mapInstanceRef.current || !window.google) return;
 
     // Clear existing markers
-    markersRef.current.forEach(marker => marker.setMap(null));
+    markersRef.current.forEach(marker => {
+      if (marker.setMap) {
+        marker.setMap(null);
+      } else if (marker.map) {
+        marker.map = null;
+      }
+    });
     markersRef.current = [];
 
     // Add new markers
     markers.forEach((markerData, index) => {
-      const marker = new window.google.maps.Marker({
-        position: { lat: markerData.lat, lng: markerData.lng },
-        map: mapInstanceRef.current,
-        title: markerData.title || '',
-        icon: markerData.icon || undefined,
-        animation: markerData.animation ? window.google.maps.Animation[markerData.animation] : undefined
-      });
+      let marker;
+
+      // Use AdvancedMarkerElement if available, fallback to Marker
+      if (window.google.maps.marker && window.google.maps.marker.AdvancedMarkerElement) {
+        // Create content for AdvancedMarkerElement
+        const markerContent = document.createElement('div');
+        markerContent.style.cssText = `
+          width: 24px;
+          height: 24px;
+          background-color: #dc2626;
+          border: 2px solid white;
+          border-radius: 50%;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+          cursor: pointer;
+        `;
+
+        if (markerData.icon && typeof markerData.icon === 'string') {
+          markerContent.innerHTML = `<img src="${markerData.icon}" style="width: 100%; height: 100%; border-radius: 50%;" />`;
+        }
+
+        marker = new window.google.maps.marker.AdvancedMarkerElement({
+          position: { lat: markerData.lat, lng: markerData.lng },
+          map: mapInstanceRef.current,
+          title: markerData.title || '',
+          content: markerContent
+        });
+      } else {
+        // Fallback to deprecated Marker for compatibility
+        marker = new window.google.maps.Marker({
+          position: { lat: markerData.lat, lng: markerData.lng },
+          map: mapInstanceRef.current,
+          title: markerData.title || '',
+          icon: markerData.icon || undefined,
+          animation: markerData.animation ? window.google.maps.Animation[markerData.animation] : undefined
+        });
+      }
 
       // Add click listener to marker
       if (onMarkerClick) {

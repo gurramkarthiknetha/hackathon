@@ -9,17 +9,31 @@ export const useSocket = () => {
   const [responderLocations, setResponderLocations] = useState([]);
   const [systemAlerts, setSystemAlerts] = useState([]);
   const listenersRef = useRef(new Map());
+  const connectionAttemptedRef = useRef(false);
+  const userIdRef = useRef(null);
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      // Connect to socket
-      socketService.connect(user);
-      setIsConnected(socketService.isSocketConnected());
+      // Only connect if we haven't attempted for this user or if it's a different user
+      const shouldConnect = !connectionAttemptedRef.current || userIdRef.current !== user.id;
 
-      // Set up event listeners
+      if (shouldConnect && !socketService.isSocketConnecting()) {
+        connectionAttemptedRef.current = true;
+        userIdRef.current = user.id;
+
+        // Add a small delay to prevent rapid reconnections in development
+        setTimeout(() => {
+          socketService.connect(user);
+          setIsConnected(socketService.isSocketConnected());
+        }, 100);
+      } else if (socketService.isSocketConnected()) {
+        setIsConnected(true);
+      }
+
+      // Set up event listeners (always set up when authenticated)
       const handleNewIncident = (incident) => {
         setIncidents(prev => [incident, ...prev.slice(0, 49)]); // Keep last 50
-        
+
         // Show notification for high priority incidents
         if (incident.severity === 'critical' || incident.severity === 'high') {
           if ('Notification' in window && Notification.permission === 'granted') {
@@ -32,7 +46,7 @@ export const useSocket = () => {
       };
 
       const handleIncidentUpdated = (incident) => {
-        setIncidents(prev => 
+        setIncidents(prev =>
           prev.map(item => item.id === incident.id ? incident : item)
         );
       };
@@ -41,8 +55,8 @@ export const useSocket = () => {
         setResponderLocations(prev => {
           const existing = prev.find(r => r.userId === data.userId);
           if (existing) {
-            return prev.map(r => 
-              r.userId === data.userId 
+            return prev.map(r =>
+              r.userId === data.userId
                 ? { ...r, location: data.location, timestamp: data.timestamp }
                 : r
             );
@@ -53,9 +67,9 @@ export const useSocket = () => {
       };
 
       const handleResponderStatusUpdate = (data) => {
-        setResponderLocations(prev => 
-          prev.map(r => 
-            r.userId === data.userId 
+        setResponderLocations(prev =>
+          prev.map(r =>
+            r.userId === data.userId
               ? { ...r, status: data.status, timestamp: data.timestamp }
               : r
           )
@@ -91,8 +105,14 @@ export const useSocket = () => {
           socketService.off(event, callback);
         });
         listenersRef.current.clear();
+        connectionAttemptedRef.current = false;
+        userIdRef.current = null;
       };
-    } else {
+    } else if (!isAuthenticated) {
+      // Reset connection attempt flag when not authenticated
+      connectionAttemptedRef.current = false;
+      userIdRef.current = null;
+
       // Disconnect if not authenticated
       socketService.disconnect();
       setIsConnected(false);
@@ -102,15 +122,20 @@ export const useSocket = () => {
     }
   }, [isAuthenticated, user]);
 
-  // Update connection status
+  // Update connection status less frequently and only when needed
   useEffect(() => {
+    if (!isAuthenticated || !user) return;
+
     const checkConnection = () => {
-      setIsConnected(socketService.isSocketConnected());
+      const currentConnectionState = socketService.isSocketConnected();
+      if (currentConnectionState !== isConnected) {
+        setIsConnected(currentConnectionState);
+      }
     };
 
-    const interval = setInterval(checkConnection, 5000);
+    const interval = setInterval(checkConnection, 30000); // Check every 30 seconds
     return () => clearInterval(interval);
-  }, []);
+  }, [isAuthenticated, user, isConnected]);
 
   const updateLocation = (location) => {
     socketService.updateLocation(location);

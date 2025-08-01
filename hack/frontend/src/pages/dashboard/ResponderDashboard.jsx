@@ -62,21 +62,69 @@ const ResponderDashboard = () => {
 		setResponderData(prev => ({ ...prev, activeIncidents: activeCount }));
 	}, [incidents]);
 
-	// Get location on mount and update via WebSocket
+	// Get location on mount and update via WebSocket with throttling
 	useEffect(() => {
+		let lastLocationUpdate = 0;
+		let watchId = null;
+		const LOCATION_UPDATE_INTERVAL = 10000; // 10 seconds minimum between updates
+		const SIGNIFICANT_DISTANCE = 10; // meters
+
+		// Function to calculate distance between two coordinates
+		const calculateDistance = (lat1, lon1, lat2, lon2) => {
+			const R = 6371e3; // Earth's radius in meters
+			const φ1 = lat1 * Math.PI/180;
+			const φ2 = lat2 * Math.PI/180;
+			const Δφ = (lat2-lat1) * Math.PI/180;
+			const Δλ = (lon2-lon1) * Math.PI/180;
+
+			const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+					Math.cos(φ1) * Math.cos(φ2) *
+					Math.sin(Δλ/2) * Math.sin(Δλ/2);
+			const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+			return R * c; // Distance in meters
+		};
+
+		// Function to handle location updates with throttling
+		const handleLocationUpdate = (position) => {
+			const now = Date.now();
+			const location = {
+				latitude: position.coords.latitude,
+				longitude: position.coords.longitude
+			};
+
+			// Check if enough time has passed or if the user has moved significantly
+			let shouldUpdate = false;
+
+			if (now - lastLocationUpdate >= LOCATION_UPDATE_INTERVAL) {
+				shouldUpdate = true;
+			} else if (currentLocation) {
+				const distance = calculateDistance(
+					currentLocation.latitude || currentLocation.lat,
+					currentLocation.longitude || currentLocation.lng,
+					location.latitude,
+					location.longitude
+				);
+				if (distance >= SIGNIFICANT_DISTANCE) {
+					shouldUpdate = true;
+				}
+			} else {
+				shouldUpdate = true; // First location update
+			}
+
+			if (shouldUpdate) {
+				setCurrentLocation(location);
+				updateLocation(location);
+				lastLocationUpdate = now;
+			}
+		};
+
 		if (navigator.geolocation) {
+			// Get initial location
 			navigator.geolocation.getCurrentPosition(
-				(position) => {
-					const location = {
-						latitude: position.coords.latitude,
-						longitude: position.coords.longitude
-					};
-					setCurrentLocation(location);
-					// Send location update via WebSocket
-					updateLocation(location);
-				},
+				handleLocationUpdate,
 				(error) => {
-					console.log("Location access denied");
+					console.log("Location access denied:", error.message);
 					// Use mock location for demo
 					const mockLocation = {
 						latitude: 40.7132,
@@ -84,26 +132,28 @@ const ResponderDashboard = () => {
 					};
 					setCurrentLocation(mockLocation);
 					updateLocation(mockLocation);
+				},
+				{ enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+			);
+
+			// Set up location tracking with throttling
+			watchId = navigator.geolocation.watchPosition(
+				handleLocationUpdate,
+				(error) => console.log("Location tracking error:", error.message),
+				{
+					enableHighAccuracy: true,
+					maximumAge: 60000, // Cache position for 1 minute
+					timeout: 15000 // 15 second timeout
 				}
 			);
-
-			// Set up location tracking
-			const watchId = navigator.geolocation.watchPosition(
-				(position) => {
-					const location = {
-						latitude: position.coords.latitude,
-						longitude: position.coords.longitude
-					};
-					setCurrentLocation(location);
-					updateLocation(location);
-				},
-				(error) => console.log("Location tracking error:", error),
-				{ enableHighAccuracy: true, maximumAge: 30000, timeout: 27000 }
-			);
-
-			return () => navigator.geolocation.clearWatch(watchId);
 		}
-	}, [updateLocation]);
+
+		return () => {
+			if (watchId !== null) {
+				navigator.geolocation.clearWatch(watchId);
+			}
+		};
+	}, [updateLocation, currentLocation]);
 
 	const getStatusColor = (status) => {
 		switch (status) {
