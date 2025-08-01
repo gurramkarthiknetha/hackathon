@@ -2,240 +2,212 @@ import { motion } from "framer-motion";
 import { useAuthStore } from "../../store/authStore";
 import { useSidebar } from "../../components/layout/DashboardLayout";
 import { useState, useEffect } from "react";
-import { 
-	Ticket, 
-	CheckCircle, 
-	Clock, 
-	TrendingUp, 
+import {
+	AlertTriangle,
+	MapPin,
+	MessageSquare,
+	Clock,
 	Activity,
 	AlertCircle,
-	FileText,
-	Calendar
+	Users,
+	Camera,
+	Zap,
+	Shield,
+	Eye,
+	Brain
 } from "lucide-react";
 
+// Import dashboard components
+import LiveVideoFeed from "../../components/monitoring/LiveVideoFeed";
+import RealTimeAlerts from "../../components/monitoring/RealTimeAlerts";
+import InteractiveZoneMap from "../../components/monitoring/InteractiveZoneMap";
+import CommandCenter from "../../components/monitoring/CommandCenter";
+import IncidentTimeline from "../../components/monitoring/IncidentTimeline";
+
 const OperatorDashboard = () => {
-	const { user, fetchDashboardData } = useAuthStore();
+	const { user } = useAuthStore();
 	const { sidebarOpen } = useSidebar();
-	const [dashboardData, setDashboardData] = useState(null);
-	const [loading, setLoading] = useState(true);
+	const [loading, setLoading] = useState(false);
+	const [selectedIncident, setSelectedIncident] = useState(null);
+	const [timelineFilter, setTimelineFilter] = useState({
+		startDate: new Date(Date.now() - 24 * 60 * 60 * 1000), // Last 24 hours
+		endDate: new Date(),
+		zone: null,
+		type: null
+	});
 
-	useEffect(() => {
-		const loadDashboardData = async () => {
-			try {
-				const data = await fetchDashboardData();
-				setDashboardData(data.data);
-			} catch (error) {
-				console.error("Failed to load operator dashboard data:", error);
-			} finally {
-				setLoading(false);
-			}
-		};
-
-		loadDashboardData();
-	}, [fetchDashboardData]);
-
-	const operatorStats = dashboardData?.stats || {
-		activeTickets: 0,
-		resolvedTickets: 0,
-		pendingTasks: 0,
-		completedTasks: 0
-	};
+	// Mock real-time stats (in production, this would come from WebSocket)
+	const [stats, setStats] = useState({
+		activeIncidents: 3,
+		totalZones: 4,
+		activeResponders: 8,
+		systemStatus: 'operational'
+	});
 
 	const statsCards = [
-		{ 
-			icon: Ticket, 
-			label: "Active Tickets", 
-			value: operatorStats.activeTickets, 
-			color: "from-orange-500 to-orange-600",
-			change: "+3 today"
+		{
+			icon: AlertTriangle,
+			label: "Active Incidents",
+			value: stats.activeIncidents,
+			color: "from-red-500 to-red-600",
+			change: "+2 in last hour",
+			pulse: stats.activeIncidents > 0
 		},
-		{ 
-			icon: CheckCircle, 
-			label: "Resolved Tickets", 
-			value: operatorStats.resolvedTickets, 
-			color: "from-green-500 to-green-600",
-			change: "+8 this week"
-		},
-		{ 
-			icon: Clock, 
-			label: "Pending Tasks", 
-			value: operatorStats.pendingTasks, 
+		{
+			icon: MapPin,
+			label: "Monitored Zones",
+			value: stats.totalZones,
 			color: "from-blue-500 to-blue-600",
-			change: "-2 today"
+			change: "All operational"
 		},
-		{ 
-			icon: TrendingUp, 
-			label: "Completed Tasks", 
-			value: operatorStats.completedTasks, 
-			color: "from-purple-500 to-purple-600",
-			change: "+15 this week"
+		{
+			icon: Users,
+			label: "Active Responders",
+			value: stats.activeResponders,
+			color: "from-green-500 to-green-600",
+			change: "8/10 deployed"
+		},
+		{
+			icon: Shield,
+			label: "System Status",
+			value: stats.systemStatus.toUpperCase(),
+			color: "from-emerald-500 to-emerald-600",
+			change: "All systems green",
+			isText: true
 		},
 	];
 
-	const recentActivity = dashboardData?.recentActivity || [];
+	const handleIncidentSelect = (incident) => {
+		setSelectedIncident(incident);
+	};
 
-	const priorityTasks = [
-		{ id: 1, title: "System Maintenance", priority: "High", dueDate: "Today", status: "In Progress" },
-		{ id: 2, title: "User Access Review", priority: "Medium", dueDate: "Tomorrow", status: "Pending" },
-		{ id: 3, title: "Backup Verification", priority: "High", dueDate: "Today", status: "Pending" },
-		{ id: 4, title: "Security Audit", priority: "Low", dueDate: "Next Week", status: "Scheduled" },
-	];
-
-	const getPriorityColor = (priority) => {
-		switch (priority) {
-			case 'High': return 'text-red-400 bg-red-900/20';
-			case 'Medium': return 'text-yellow-400 bg-yellow-900/20';
-			case 'Low': return 'text-green-400 bg-green-900/20';
-			default: return 'text-gray-400 bg-gray-900/20';
-		}
+	const handleTimelineFilter = (newFilter) => {
+		setTimelineFilter(prev => ({ ...prev, ...newFilter }));
 	};
 
 	if (loading) {
 		return (
 			<div className="flex items-center justify-center h-full">
-				<div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-500"></div>
+				<div className="animate-spin rounded-full h-32 w-32 border-b-2 border-cyan-500"></div>
 			</div>
 		);
 	}
 
 	return (
-		<div className={`p-6 transition-all duration-300 ${sidebarOpen ? 'ml-0' : 'ml-0'}`}>
+		<div className={`p-4 transition-all duration-300 ${sidebarOpen ? 'ml-0' : 'ml-0'} min-h-screen`}>
 			{/* Header */}
 			<motion.div
 				initial={{ opacity: 0, y: -20 }}
 				animate={{ opacity: 1, y: 0 }}
 				transition={{ duration: 0.5 }}
-				className="mb-8"
+				className="mb-6"
 			>
-				<h1 className="text-3xl font-bold text-white mb-2">
-					Operator Dashboard
-				</h1>
-				<p className="text-gray-300">
-					Welcome back, {user?.name}! Here's your operational overview.
-				</p>
+				<div className="flex items-center justify-between">
+					<div>
+						<h1 className="text-3xl font-bold text-white mb-2 flex items-center">
+							<Eye className="h-8 w-8 mr-3 text-cyan-400" />
+							AI Event Monitor
+						</h1>
+						<p className="text-gray-300">
+							Welcome back, {user?.name}! Command Center Operations
+						</p>
+					</div>
+					<div className="flex items-center space-x-4">
+						<div className="flex items-center space-x-2">
+							<div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+							<span className="text-green-400 text-sm font-medium">LIVE</span>
+						</div>
+						<div className="text-right">
+							<div className="text-white font-semibold">{new Date().toLocaleTimeString()}</div>
+							<div className="text-gray-400 text-sm">{new Date().toLocaleDateString()}</div>
+						</div>
+					</div>
+				</div>
 			</motion.div>
 
 			{/* Stats Cards */}
-			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
 				{statsCards.map((stat, index) => (
 					<motion.div
 						key={stat.label}
 						initial={{ opacity: 0, y: 20 }}
 						animate={{ opacity: 1, y: 0 }}
 						transition={{ duration: 0.5, delay: index * 0.1 }}
-						className="bg-gray-800 bg-opacity-50 backdrop-filter backdrop-blur-xl rounded-xl p-6 border border-gray-700"
+						className={`bg-gray-800/60 backdrop-blur-xl rounded-xl p-4 border border-gray-700/50
+							${stat.pulse ? 'ring-2 ring-red-500/50 animate-pulse' : ''}
+							hover:border-cyan-500/50 transition-all duration-300`}
 					>
 						<div className="flex items-center justify-between">
 							<div>
-								<p className="text-gray-400 text-sm font-medium">{stat.label}</p>
-								<p className="text-2xl font-bold text-white mt-1">{stat.value}</p>
-								<p className="text-green-400 text-sm mt-1">{stat.change}</p>
+								<p className="text-gray-400 text-xs font-medium uppercase tracking-wide">{stat.label}</p>
+								<p className={`text-xl font-bold mt-1 ${stat.isText ? 'text-emerald-400' : 'text-white'}`}>
+									{stat.value}
+								</p>
+								<p className="text-cyan-400 text-xs mt-1">{stat.change}</p>
 							</div>
-							<div className={`p-3 rounded-lg bg-gradient-to-r ${stat.color}`}>
-								<stat.icon className="h-6 w-6 text-white" />
+							<div className={`p-3 rounded-lg bg-gradient-to-r ${stat.color} shadow-lg`}>
+								<stat.icon className="h-5 w-5 text-white" />
 							</div>
 						</div>
 					</motion.div>
 				))}
 			</div>
 
-			{/* Content Grid */}
-			<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-				{/* Priority Tasks */}
+			{/* Main Dashboard Grid */}
+			<div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+				{/* Live Video Feed - Top Left */}
 				<motion.div
 					initial={{ opacity: 0, x: -20 }}
 					animate={{ opacity: 1, x: 0 }}
 					transition={{ duration: 0.5, delay: 0.4 }}
-					className="bg-gray-800 bg-opacity-50 backdrop-filter backdrop-blur-xl rounded-xl p-6 border border-gray-700"
+					className="bg-gray-800/60 backdrop-blur-xl rounded-xl border border-gray-700/50 overflow-hidden"
 				>
-					<h3 className="text-xl font-semibold text-white mb-4 flex items-center">
-						<AlertCircle className="h-5 w-5 mr-2" />
-						Priority Tasks
-					</h3>
-					<div className="space-y-3">
-						{priorityTasks.map((task, index) => (
-							<div key={task.id} className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
-								<div className="flex-1">
-									<p className="text-white font-medium">{task.title}</p>
-									<div className="flex items-center mt-1 space-x-2">
-										<span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(task.priority)}`}>
-											{task.priority}
-										</span>
-										<span className="text-gray-400 text-xs flex items-center">
-											<Calendar className="h-3 w-3 mr-1" />
-											{task.dueDate}
-										</span>
-									</div>
-								</div>
-								<div className="text-right">
-									<span className="text-gray-300 text-sm">{task.status}</span>
-								</div>
-							</div>
-						))}
-					</div>
+					<LiveVideoFeed selectedIncident={selectedIncident} />
 				</motion.div>
 
-				{/* Recent Activity */}
+				{/* Real-Time Alerts - Top Right */}
 				<motion.div
 					initial={{ opacity: 0, x: 20 }}
 					animate={{ opacity: 1, x: 0 }}
 					transition={{ duration: 0.5, delay: 0.5 }}
-					className="bg-gray-800 bg-opacity-50 backdrop-filter backdrop-blur-xl rounded-xl p-6 border border-gray-700"
+					className="bg-gray-800/60 backdrop-blur-xl rounded-xl border border-gray-700/50 overflow-hidden"
 				>
-					<h3 className="text-xl font-semibold text-white mb-4 flex items-center">
-						<Activity className="h-5 w-5 mr-2" />
-						Recent Activity
-					</h3>
-					<div className="space-y-3">
-						{recentActivity.length > 0 ? recentActivity.map((activity, index) => (
-							<div key={activity.id} className="flex items-start space-x-3 py-2">
-								<div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-								<div className="flex-1">
-									<p className="text-white text-sm">{activity.action}</p>
-									<p className="text-gray-400 text-xs">
-										{new Date(activity.timestamp).toLocaleString()}
-									</p>
-								</div>
-							</div>
-						)) : (
-							<div className="text-center py-8">
-								<Activity className="h-12 w-12 text-gray-600 mx-auto mb-3" />
-								<p className="text-gray-400">No recent activity</p>
-							</div>
-						)}
-					</div>
+					<RealTimeAlerts onIncidentSelect={handleIncidentSelect} />
+				</motion.div>
+
+				{/* Interactive Zone Map - Bottom Left */}
+				<motion.div
+					initial={{ opacity: 0, x: -20 }}
+					animate={{ opacity: 1, x: 0 }}
+					transition={{ duration: 0.5, delay: 0.6 }}
+					className="bg-gray-800/60 backdrop-blur-xl rounded-xl border border-gray-700/50 overflow-hidden"
+				>
+					<InteractiveZoneMap onIncidentSelect={handleIncidentSelect} selectedIncident={selectedIncident} />
+				</motion.div>
+
+				{/* Command Center - Bottom Right */}
+				<motion.div
+					initial={{ opacity: 0, x: 20 }}
+					animate={{ opacity: 1, x: 0 }}
+					transition={{ duration: 0.5, delay: 0.7 }}
+					className="bg-gray-800/60 backdrop-blur-xl rounded-xl border border-gray-700/50 overflow-hidden"
+				>
+					<CommandCenter />
 				</motion.div>
 			</div>
 
-			{/* Quick Actions */}
+			{/* Incident Timeline - Bottom Full Width */}
 			<motion.div
 				initial={{ opacity: 0, y: 20 }}
 				animate={{ opacity: 1, y: 0 }}
-				transition={{ duration: 0.5, delay: 0.6 }}
-				className="mt-8 bg-gray-800 bg-opacity-50 backdrop-filter backdrop-blur-xl rounded-xl p-6 border border-gray-700"
+				transition={{ duration: 0.5, delay: 0.8 }}
+				className="bg-gray-800/60 backdrop-blur-xl rounded-xl border border-gray-700/50 overflow-hidden"
 			>
-				<h3 className="text-xl font-semibold text-white mb-4 flex items-center">
-					<FileText className="h-5 w-5 mr-2" />
-					Quick Actions
-				</h3>
-				<div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-					<button className="flex items-center justify-center p-4 bg-orange-600 hover:bg-orange-700 rounded-lg transition-colors">
-						<Ticket className="h-5 w-5 mr-2" />
-						<span className="text-white font-medium">New Ticket</span>
-					</button>
-					<button className="flex items-center justify-center p-4 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">
-						<Clock className="h-5 w-5 mr-2" />
-						<span className="text-white font-medium">View Tasks</span>
-					</button>
-					<button className="flex items-center justify-center p-4 bg-green-600 hover:bg-green-700 rounded-lg transition-colors">
-						<CheckCircle className="h-5 w-5 mr-2" />
-						<span className="text-white font-medium">Mark Complete</span>
-					</button>
-					<button className="flex items-center justify-center p-4 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors">
-						<FileText className="h-5 w-5 mr-2" />
-						<span className="text-white font-medium">Generate Report</span>
-					</button>
-				</div>
+				<IncidentTimeline
+					filter={timelineFilter}
+					onFilterChange={handleTimelineFilter}
+					onIncidentSelect={handleIncidentSelect}
+				/>
 			</motion.div>
 		</div>
 	);
