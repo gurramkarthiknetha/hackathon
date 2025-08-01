@@ -1,10 +1,12 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Home, User, Mail, Info, X } from "lucide-react";
+import { Home, User, Mail, Info, X, Camera, AlertTriangle, Map, Brain, Clock, Target, Navigation, Zap, Radio, FileText, Users, Settings, BarChart3, Shield } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { useAuthStore } from "../../store/authStore";
 
 const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
   const [isMobile, setIsMobile] = useState(false);
+  const { user } = useAuthStore();
 
   useEffect(() => {
     const checkScreenSize = () => {
@@ -16,12 +18,69 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
-  const menuItems = [
+  // Base menu items for all users
+  const baseMenuItems = [
     { icon: Home, label: "Home", path: "/dashboard" },
     { icon: User, label: "Profile", path: "/dashboard/profile" },
     { icon: Mail, label: "Contact Us", path: "/dashboard/contact" },
     { icon: Info, label: "About Us", path: "/dashboard/about" },
   ];
+
+  // Operator-specific menu items
+  const operatorMenuItems = [
+    { icon: Home, label: "Home", path: "/dashboard" },
+    { icon: Camera, label: "Live Video Feed", path: "/dashboard/operator/video-feed" },
+    { icon: AlertTriangle, label: "Real-Time Alerts", path: "/dashboard/operator/alerts" },
+    { icon: Map, label: "Zone Map", path: "/dashboard/operator/zone-map" },
+    { icon: Brain, label: "AI Command Center", path: "/dashboard/operator/command-center" },
+    { icon: Clock, label: "Incident Timeline", path: "/dashboard/operator/timeline" },
+    { icon: User, label: "Profile", path: "/dashboard/profile" },
+    { icon: Mail, label: "Contact Us", path: "/dashboard/contact" },
+    { icon: Info, label: "About Us", path: "/dashboard/about" },
+  ];
+
+  // Responder-specific menu items
+  const responderMenuItems = [
+    { icon: Home, label: "Home", path: "/dashboard" },
+    { icon: Target, label: "Assigned Tasks", path: "/dashboard/responder/tasks" },
+    { icon: Navigation, label: "Responder Map", path: "/dashboard/responder/map" },
+    { icon: Zap, label: "Quick Actions", path: "/dashboard/responder/actions" },
+    { icon: Radio, label: "Status & Communication", path: "/dashboard/responder/communication" },
+    { icon: FileText, label: "Incident Reports", path: "/dashboard/responder/reports" },
+    { icon: User, label: "Profile", path: "/dashboard/profile" },
+    { icon: Mail, label: "Contact Us", path: "/dashboard/contact" },
+    { icon: Info, label: "About Us", path: "/dashboard/about" },
+  ];
+
+  // Admin-specific menu items
+  const adminMenuItems = [
+    { icon: Home, label: "Home", path: "/dashboard" },
+    { icon: Users, label: "User Management", path: "/dashboard/admin/users" },
+    { icon: BarChart3, label: "Analytics & Reports", path: "/dashboard/admin/analytics" },
+    { icon: Settings, label: "System Settings", path: "/dashboard/admin/settings" },
+    { icon: Shield, label: "Security & Audit", path: "/dashboard/admin/security" },
+    { icon: Map, label: "Zone Management", path: "/dashboard/admin/zones" },
+    { icon: User, label: "Profile", path: "/dashboard/profile" },
+    { icon: Mail, label: "Contact Us", path: "/dashboard/contact" },
+    { icon: Info, label: "About Us", path: "/dashboard/about" },
+  ];
+
+  // Get menu items based on user role
+  const getMenuItems = () => {
+    if (user?.role === 'admin') {
+      // For admin users, show admin-specific navigation by default
+      return adminMenuItems;
+    }
+    if (user?.role === 'operator') {
+      return operatorMenuItems;
+    }
+    if (user?.role === 'responder') {
+      return responderMenuItems;
+    }
+    return baseMenuItems;
+  };
+
+  const menuItems = getMenuItems();
 
   const sidebarVariants = {
     open: {

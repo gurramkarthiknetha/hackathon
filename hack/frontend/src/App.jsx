@@ -16,6 +16,27 @@ import ResponderDashboard from "./pages/dashboard/ResponderDashboard";
 import ProfilePage from "./pages/dashboard/ProfilePage";
 import ContactPage from "./pages/dashboard/ContactPage";
 import AboutPage from "./pages/dashboard/AboutPage";
+
+// Operator-specific pages
+import LiveVideoFeedPage from "./pages/operator/LiveVideoFeedPage";
+import RealTimeAlertsPage from "./pages/operator/RealTimeAlertsPage";
+import ZoneMapPage from "./pages/operator/ZoneMapPage";
+import AICommandCenterPage from "./pages/operator/AICommandCenterPage";
+import IncidentTimelinePage from "./pages/operator/IncidentTimelinePage";
+
+// Responder-specific pages
+import AssignedTasksPage from "./pages/responder/AssignedTasksPage";
+import ResponderMapPage from "./pages/responder/ResponderMapPage";
+import QuickActionsPage from "./pages/responder/QuickActionsPage";
+import StatusCommunicationPage from "./pages/responder/StatusCommunicationPage";
+import IncidentReportsPage from "./pages/responder/IncidentReportsPage";
+
+// Admin-specific pages
+import UserManagementPage from "./pages/admin/UserManagementPage";
+import AnalyticsReportsPage from "./pages/admin/AnalyticsReportsPage";
+import SystemSettingsPage from "./pages/admin/SystemSettingsPage";
+import SecurityAuditPage from "./pages/admin/SecurityAuditPage";
+import ZoneManagementPage from "./pages/admin/ZoneManagementPage";
 import { Toaster } from "react-hot-toast";
 import { useAuthStore } from "./store/authStore";
 import { useEffect } from "react";
@@ -111,6 +132,132 @@ function App() {
 						element={
 							<RoleProtectedRoute allowedRoles={['admin', 'responder']}>
 								<ResponderDashboard />
+							</RoleProtectedRoute>
+						}
+					/>
+
+					{/* Operator-specific routes */}
+					<Route
+						path='operator/video-feed'
+						element={
+							<RoleProtectedRoute allowedRoles={['admin', 'operator']}>
+								<LiveVideoFeedPage />
+							</RoleProtectedRoute>
+						}
+					/>
+					<Route
+						path='operator/alerts'
+						element={
+							<RoleProtectedRoute allowedRoles={['admin', 'operator']}>
+								<RealTimeAlertsPage />
+							</RoleProtectedRoute>
+						}
+					/>
+					<Route
+						path='operator/zone-map'
+						element={
+							<RoleProtectedRoute allowedRoles={['admin', 'operator']}>
+								<ZoneMapPage />
+							</RoleProtectedRoute>
+						}
+					/>
+					<Route
+						path='operator/command-center'
+						element={
+							<RoleProtectedRoute allowedRoles={['admin', 'operator']}>
+								<AICommandCenterPage />
+							</RoleProtectedRoute>
+						}
+					/>
+					<Route
+						path='operator/timeline'
+						element={
+							<RoleProtectedRoute allowedRoles={['admin', 'operator']}>
+								<IncidentTimelinePage />
+							</RoleProtectedRoute>
+						}
+					/>
+
+					{/* Responder-specific routes */}
+					<Route
+						path='responder/tasks'
+						element={
+							<RoleProtectedRoute allowedRoles={['admin', 'responder']}>
+								<AssignedTasksPage />
+							</RoleProtectedRoute>
+						}
+					/>
+					<Route
+						path='responder/map'
+						element={
+							<RoleProtectedRoute allowedRoles={['admin', 'responder']}>
+								<ResponderMapPage />
+							</RoleProtectedRoute>
+						}
+					/>
+					<Route
+						path='responder/actions'
+						element={
+							<RoleProtectedRoute allowedRoles={['admin', 'responder']}>
+								<QuickActionsPage />
+							</RoleProtectedRoute>
+						}
+					/>
+					<Route
+						path='responder/communication'
+						element={
+							<RoleProtectedRoute allowedRoles={['admin', 'responder']}>
+								<StatusCommunicationPage />
+							</RoleProtectedRoute>
+						}
+					/>
+					<Route
+						path='responder/reports'
+						element={
+							<RoleProtectedRoute allowedRoles={['admin', 'responder']}>
+								<IncidentReportsPage />
+							</RoleProtectedRoute>
+						}
+					/>
+
+					{/* Admin-specific routes */}
+					<Route
+						path='admin/users'
+						element={
+							<RoleProtectedRoute allowedRoles={['admin']}>
+								<UserManagementPage />
+							</RoleProtectedRoute>
+						}
+					/>
+					<Route
+						path='admin/analytics'
+						element={
+							<RoleProtectedRoute allowedRoles={['admin']}>
+								<AnalyticsReportsPage />
+							</RoleProtectedRoute>
+						}
+					/>
+					<Route
+						path='admin/settings'
+						element={
+							<RoleProtectedRoute allowedRoles={['admin']}>
+								<SystemSettingsPage />
+							</RoleProtectedRoute>
+						}
+					/>
+					<Route
+						path='admin/security'
+						element={
+							<RoleProtectedRoute allowedRoles={['admin']}>
+								<SecurityAuditPage />
+							</RoleProtectedRoute>
+						}
+					/>
+					<Route
+						path='admin/zones'
+						element={
+							<RoleProtectedRoute allowedRoles={['admin']}>
+								<ZoneManagementPage />
 							</RoleProtectedRoute>
 						}
 					/>

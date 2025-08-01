@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { 
-  Zap, 
-  AlertTriangle, 
-  Phone, 
-  MessageSquare, 
-  Camera, 
+import {
+  AlertTriangle,
+  Phone,
+  MessageSquare,
+  Camera,
   CheckCircle,
   Clock,
   MapPin,
@@ -300,14 +299,9 @@ const QuickActions = () => {
     <div className="h-full flex flex-col bg-gray-800/60 backdrop-blur-xl lg:rounded-xl lg:border lg:border-gray-700/50">
       {/* Header */}
       <div className="p-4 border-b border-gray-700/50">
-        <div className="flex items-center space-x-3">
-          <div className="p-2 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg">
-            <Zap className="h-5 w-5 text-white" />
-          </div>
-          <div>
-            <h3 className="text-white font-semibold">Quick Actions</h3>
-            <p className="text-gray-400 text-sm">Emergency & communication tools</p>
-          </div>
+        <div className="w-full">
+          <h3 className="text-white font-semibold">Quick Actions</h3>
+          <p className="text-gray-400 text-sm">Emergency & communication tools</p>
         </div>
       </div>
 
