@@ -8,6 +8,8 @@ export const useSocket = () => {
   const [incidents, setIncidents] = useState([]);
   const [responderLocations, setResponderLocations] = useState([]);
   const [systemAlerts, setSystemAlerts] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const listenersRef = useRef(new Map());
   const connectionAttemptedRef = useRef(false);
   const userIdRef = useRef(null);
@@ -80,12 +82,60 @@ export const useSocket = () => {
         setSystemAlerts(prev => [alert, ...prev.slice(0, 9)]); // Keep last 10
       };
 
+      // Message handlers
+      const handleNewMessage = (data) => {
+        setMessages(prev => {
+          // Check if message already exists to avoid duplicates
+          const exists = prev.some(msg => (msg.id || msg._id) === (data.id || data._id));
+          if (exists) {
+            return prev;
+          }
+          return [data, ...prev.slice(0, 49)]; // Keep last 50 messages
+        });
+
+        // Update unread count if message is not from current user
+        if (data.sender.id !== user.id) {
+          setUnreadCount(prev => prev + 1);
+
+          // Show browser notification for high priority messages
+          if (data.priority === 'high' || data.priority === 'critical') {
+            if ('Notification' in window && Notification.permission === 'granted') {
+              new Notification(`${data.type === 'broadcast' ? 'Broadcast' : 'Team Message'} - ${data.priority.toUpperCase()}`, {
+                body: `${data.sender.name}: ${data.content}`,
+                icon: '/favicon.ico'
+              });
+            }
+          }
+        }
+      };
+
+      const handleMessageSent = (data) => {
+        console.log('Message sent successfully:', data);
+      };
+
+      const handleMessageError = (data) => {
+        console.error('Message error:', data.error);
+      };
+
+      const handleMessageRead = (data) => {
+        // Update message read status if needed
+        setMessages(prev => prev.map(msg =>
+          (msg.id || msg._id) === data.messageId
+            ? { ...msg, readBy: [...(msg.readBy || []), { user: data.readBy, readAt: data.readAt }] }
+            : msg
+        ));
+      };
+
       // Register listeners
       socketService.on('newIncident', handleNewIncident);
       socketService.on('incidentUpdated', handleIncidentUpdated);
       socketService.on('responderLocationUpdate', handleResponderLocationUpdate);
       socketService.on('responderStatusUpdate', handleResponderStatusUpdate);
       socketService.on('systemAlert', handleSystemAlert);
+      socketService.on('newMessage', handleNewMessage);
+      socketService.on('messageSent', handleMessageSent);
+      socketService.on('messageError', handleMessageError);
+      socketService.on('messageRead', handleMessageRead);
 
       // Store listeners for cleanup
       listenersRef.current.set('newIncident', handleNewIncident);
@@ -93,6 +143,10 @@ export const useSocket = () => {
       listenersRef.current.set('responderLocationUpdate', handleResponderLocationUpdate);
       listenersRef.current.set('responderStatusUpdate', handleResponderStatusUpdate);
       listenersRef.current.set('systemAlert', handleSystemAlert);
+      listenersRef.current.set('newMessage', handleNewMessage);
+      listenersRef.current.set('messageSent', handleMessageSent);
+      listenersRef.current.set('messageError', handleMessageError);
+      listenersRef.current.set('messageRead', handleMessageRead);
 
       // Request notification permission
       if ('Notification' in window && Notification.permission === 'default') {
@@ -119,6 +173,8 @@ export const useSocket = () => {
       setIncidents([]);
       setResponderLocations([]);
       setSystemAlerts([]);
+      setMessages([]);
+      setUnreadCount(0);
     }
   }, [isAuthenticated, user]);
 
@@ -157,6 +213,21 @@ export const useSocket = () => {
     socketService.sendMessage(message);
   };
 
+  // Team communication methods
+  const sendTeamMessage = (messageData) => {
+    socketService.sendTeamMessage(messageData);
+  };
+
+  const broadcastMessage = (messageData) => {
+    socketService.broadcastMessage(messageData);
+  };
+
+  const markMessageAsRead = (messageId) => {
+    socketService.markMessageAsRead(messageId);
+    // Also update local unread count
+    setUnreadCount(prev => Math.max(0, prev - 1));
+  };
+
   const clearSystemAlerts = () => {
     setSystemAlerts([]);
   };
@@ -170,11 +241,16 @@ export const useSocket = () => {
     incidents,
     responderLocations,
     systemAlerts,
+    messages,
+    unreadCount,
     updateLocation,
     updateStatus,
     reportIncident,
     updateIncident,
     sendMessage,
+    sendTeamMessage,
+    broadcastMessage,
+    markMessageAsRead,
     clearSystemAlerts,
     removeIncident,
     socketId: socketService.getSocketId()

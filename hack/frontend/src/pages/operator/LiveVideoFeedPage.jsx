@@ -17,7 +17,6 @@ const LiveVideoFeedPage = () => {
     { id: "cam_west_01", name: "West Zone Cam 1", zone: "west_zone", status: "active", location: "Parking Area" },
     { id: "cam_north_01", name: "North Zone Cam 1", zone: "north_zone", status: "active", location: "Emergency Exit" },
     { id: "cam_south_01", name: "South Zone Cam 1", zone: "south_zone", status: "active", location: "Stage Area" },
-    { id: "cam_central_01", name: "Central Cam 1", zone: "central_zone", status: "active", location: "Control Room" }
   ];
 
   const [selectedCamera, setSelectedCamera] = useState(cameras[0]);

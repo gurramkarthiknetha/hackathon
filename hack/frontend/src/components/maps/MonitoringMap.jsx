@@ -179,6 +179,8 @@ const MonitoringMap = ({
           markers={allMarkers}
           onMarkerClick={handleMarkerClick}
           onMapClick={handleMapClick}
+          showUserLocation={true}
+          centerOnUserLocation={false}
           className="w-full h-full"
           mapOptions={{
             styles: [

@@ -4,6 +4,7 @@ import ResponderMap from "../../components/monitoring/ResponderMap";
 import { useState, useEffect } from "react";
 import { Navigation, MapPin, Users, Target, Compass, Settings, Locate } from "lucide-react";
 import { useAuthStore } from "../../store/authStore";
+import LocationControl from "../../components/maps/LocationControl";
 
 const ResponderMapPage = () => {
   const { sidebarOpen } = useSidebar();

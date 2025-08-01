@@ -70,6 +70,14 @@ const AdminQuickActions = () => {
       color: 'from-red-500 to-red-600',
       action: () => handleEmergencyContact(),
       disabled: sendingEmergency
+    },
+    {
+      id: 'test_modal_notification',
+      title: 'Test Modal Alert',
+      description: 'Test notification modal with audio',
+      icon: Bell,
+      color: 'from-orange-500 to-orange-600',
+      action: () => handleTestModalNotification()
     }
   ];
 
@@ -112,6 +120,28 @@ const AdminQuickActions = () => {
       toast.error('Failed to send emergency contact');
     } finally {
       setSendingEmergency(false);
+    }
+  };
+
+  const handleTestModalNotification = async () => {
+    try {
+      // Test the modal notification with audio
+      await notificationService.sendModalNotification({
+        type: 'emergency',
+        severity: 'critical',
+        title: '🚨 Test Emergency Alert',
+        message: 'This is a test of the emergency notification system. The audio alarm will play continuously until you acknowledge this alert.',
+        actionUrl: '/dashboard/admin',
+        metadata: {
+          testMode: true,
+          triggeredBy: 'admin_test'
+        }
+      });
+
+      toast.success('Test modal notification triggered!');
+    } catch (error) {
+      console.error('Test modal notification error:', error);
+      toast.error('Failed to trigger test modal notification');
     }
   };
 

@@ -157,6 +157,23 @@ class SocketService {
     this.socket.on('system-alert', (data) => {
       this.emit('systemAlert', data);
     });
+
+    // Team communication events
+    this.socket.on('new-message', (data) => {
+      this.emit('newMessage', data);
+    });
+
+    this.socket.on('message-sent', (data) => {
+      this.emit('messageSent', data);
+    });
+
+    this.socket.on('message-error', (data) => {
+      this.emit('messageError', data);
+    });
+
+    this.socket.on('message-read', (data) => {
+      this.emit('messageRead', data);
+    });
   }
 
   // Event emitter methods
@@ -217,6 +234,25 @@ class SocketService {
   sendMessage(message) {
     if (this.socket && this.isConnected) {
       this.socket.emit('message', message);
+    }
+  }
+
+  // Team communication methods
+  sendTeamMessage(messageData) {
+    if (this.socket && this.isConnected) {
+      this.socket.emit('send-message', messageData);
+    }
+  }
+
+  broadcastMessage(messageData) {
+    if (this.socket && this.isConnected) {
+      this.socket.emit('broadcast-message', messageData);
+    }
+  }
+
+  markMessageAsRead(messageId) {
+    if (this.socket && this.isConnected) {
+      this.socket.emit('mark-message-read', { messageId });
     }
   }
 

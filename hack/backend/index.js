@@ -22,6 +22,11 @@ import monitoringRoutes from "./routes/monitoring.route.js";
 import mapsRoutes from "./routes/maps.route.js";
 import emailNotificationSettingsRoutes from "./routes/emailNotificationSettings.route.js";
 import notificationRoutes from "./routes/notification.route.js";
+import messageRoutes from "./routes/message.route.js";
+
+// Import models for WebSocket handlers
+import { Message } from "./models/message.model.js";
+import { User } from "./models/user.model.js";
 
 dotenv.config();
 
@@ -66,6 +71,7 @@ app.use("/api/monitoring", monitoringRoutes);
 app.use("/api/maps", mapsRoutes);
 app.use("/api/email-settings", emailNotificationSettingsRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/messages", messageRoutes);
 
 // Global error handler (must be after all routes)
 app.use(globalErrorHandler);
@@ -133,6 +139,166 @@ io.on('connection', (socket) => {
 				status: data.status,
 				timestamp: new Date()
 			});
+		}
+	});
+
+	// Handle team communication messages
+	socket.on('send-message', async (data) => {
+		try {
+			const { content, type, priority, recipients, targetZone, specificRecipients } = data;
+
+			// Get sender information
+			const sender = await User.findById(socket.userId);
+			if (!sender) {
+				socket.emit('message-error', { error: 'Sender not found' });
+				return;
+			}
+
+			// Create message in database
+			const message = new Message({
+				content,
+				type: type || 'team',
+				priority: priority || 'normal',
+				sender: socket.userId,
+				senderName: sender.name,
+				senderRole: sender.role,
+				recipients: recipients || 'responders',
+				targetZone,
+				specificRecipients,
+				isEmergency: priority === 'critical'
+			});
+
+			await message.save();
+
+			// Prepare message data for broadcasting
+			const messageData = {
+				id: message._id,
+				content: message.content,
+				type: message.type,
+				priority: message.priority,
+				sender: {
+					id: sender._id,
+					name: sender.name,
+					role: sender.role
+				},
+				recipients: message.recipients,
+				targetZone: message.targetZone,
+				timestamp: message.createdAt,
+				isEmergency: message.isEmergency
+			};
+
+			// Broadcast message based on recipients
+			switch (recipients) {
+				case 'all':
+					io.emit('new-message', messageData);
+					break;
+				case 'responders':
+					io.to('responders').emit('new-message', messageData);
+					break;
+				case 'operators':
+					io.to('operators').emit('new-message', messageData);
+					break;
+				case 'admins':
+					io.to('admin').emit('new-message', messageData);
+					break;
+				case 'zone':
+					if (targetZone) {
+						io.to(targetZone).emit('new-message', messageData);
+					}
+					break;
+				case 'specific':
+					// Send to specific users (implementation would need user socket mapping)
+					if (specificRecipients && specificRecipients.length > 0) {
+						// For now, emit to all and let clients filter
+						io.emit('new-message', messageData);
+					}
+					break;
+				default:
+					io.to('responders').emit('new-message', messageData);
+			}
+
+			// Confirm message sent to sender
+			socket.emit('message-sent', { messageId: message._id, timestamp: message.createdAt });
+
+		} catch (error) {
+			console.error('Error sending message:', error);
+			socket.emit('message-error', { error: 'Failed to send message' });
+		}
+	});
+
+	// Handle message read status
+	socket.on('mark-message-read', async (data) => {
+		try {
+			const { messageId } = data;
+			const message = await Message.findById(messageId);
+
+			if (message) {
+				await message.markAsRead(socket.userId);
+
+				// Notify sender that message was read
+				socket.to(message.sender.toString()).emit('message-read', {
+					messageId,
+					readBy: socket.userId,
+					readAt: new Date()
+				});
+			}
+		} catch (error) {
+			console.error('Error marking message as read:', error);
+		}
+	});
+
+	// Handle broadcast messages (emergency/high priority)
+	socket.on('broadcast-message', async (data) => {
+		try {
+			// Only allow operators and admins to broadcast
+			if (socket.role !== 'operator' && socket.role !== 'admin') {
+				socket.emit('message-error', { error: 'Unauthorized to broadcast' });
+				return;
+			}
+
+			const { content, priority, recipients } = data;
+
+			const sender = await User.findById(socket.userId);
+			if (!sender) {
+				socket.emit('message-error', { error: 'Sender not found' });
+				return;
+			}
+
+			const message = new Message({
+				content,
+				type: 'broadcast',
+				priority: priority || 'high',
+				sender: socket.userId,
+				senderName: sender.name,
+				senderRole: sender.role,
+				recipients: recipients || 'all',
+				isEmergency: priority === 'critical'
+			});
+
+			await message.save();
+
+			const messageData = {
+				id: message._id,
+				content: message.content,
+				type: message.type,
+				priority: message.priority,
+				sender: {
+					id: sender._id,
+					name: sender.name,
+					role: sender.role
+				},
+				recipients: message.recipients,
+				timestamp: message.createdAt,
+				isEmergency: message.isEmergency
+			};
+
+			// Broadcast to all users
+			io.emit('new-message', messageData);
+			socket.emit('message-sent', { messageId: message._id, timestamp: message.createdAt });
+
+		} catch (error) {
+			console.error('Error broadcasting message:', error);
+			socket.emit('message-error', { error: 'Failed to broadcast message' });
 		}
 	});
 

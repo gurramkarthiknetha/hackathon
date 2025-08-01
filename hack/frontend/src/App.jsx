@@ -38,10 +38,16 @@ import SystemSettingsPage from "./pages/admin/SystemSettingsPage";
 import SecurityAuditPage from "./pages/admin/SecurityAuditPage";
 import ZoneManagementPage from "./pages/admin/ZoneManagementPage";
 import NotificationManagementPage from "./pages/admin/NotificationManagementPage";
+
+// Test pages
+import MapTestPage from "./pages/MapTestPage";
+import NotificationTestPage from "./pages/NotificationTestPage";
 import { Toaster } from "react-hot-toast";
 import { useAuthStore } from "./store/authStore";
 import { useEffect } from "react";
 import RoleProtectedRoute from "./components/auth/RoleProtectedRoute";
+import NotificationModalProvider from "./components/notifications/NotificationModalProvider";
+import ModalTestButton from "./components/debug/ModalTestButton";
 
 // protect routes that require authentication
 const ProtectedRoute = ({ children }) => {
@@ -322,10 +328,16 @@ function App() {
 					}
 				/>
 
+				{/* Test routes */}
+				<Route path='/map-test' element={<MapTestPage />} />
+				<Route path='/notification-test' element={<NotificationTestPage />} />
+
 				{/* catch all routes */}
 				<Route path='*' element={<Navigate to='/dashboard' replace />} />
 			</Routes>
 			<Toaster />
+			<NotificationModalProvider />
+			<ModalTestButton />
 		</div>
 	);
 }

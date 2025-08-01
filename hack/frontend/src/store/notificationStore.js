@@ -8,6 +8,10 @@ const useNotificationStore = create(
       notifications: [],
       unreadCount: 0,
       emailNotifications: [],
+
+      // Modal notification state
+      modalNotification: null,
+      isModalOpen: false,
       
       // Email notification settings
       emailSettings: {
@@ -190,6 +194,46 @@ const useNotificationStore = create(
           };
         });
       },
+
+      // Modal notification actions
+      showModalNotification: (notification) => {
+        console.log('Store: showModalNotification called with:', notification);
+        const modalNotification = {
+          id: notification.id || `modal-${Date.now()}-${Math.random()}`,
+          ...notification,
+          timestamp: notification.timestamp || new Date(),
+        };
+
+        console.log('Store: Setting modal state - isModalOpen: true, modalNotification:', modalNotification);
+        set({
+          modalNotification,
+          isModalOpen: true,
+        });
+
+        // Also add to regular notifications list
+        get().addNotification(modalNotification);
+      },
+
+      closeModalNotification: () => {
+        set({
+          modalNotification: null,
+          isModalOpen: false,
+        });
+      },
+
+      // Send emergency modal notification
+      sendEmergencyModal: (title, message, options = {}) => {
+        const notification = {
+          type: 'emergency',
+          severity: 'critical',
+          title: title || '🚨 Emergency Alert',
+          message,
+          timestamp: new Date(),
+          ...options
+        };
+
+        get().showModalNotification(notification);
+      },
     }),
     {
       name: 'notification-store',
@@ -197,7 +241,7 @@ const useNotificationStore = create(
         notifications: state.notifications,
         emailNotifications: state.emailNotifications,
         emailSettings: state.emailSettings,
-        // Don't persist unreadCount as it should be calculated fresh
+        // Don't persist modal state or unreadCount as they should be calculated fresh
       }),
     }
   )

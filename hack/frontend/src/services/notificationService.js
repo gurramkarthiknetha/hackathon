@@ -139,6 +139,66 @@ class NotificationService {
     }
   }
 
+  // Send modal notification with audio alert
+  async sendModalNotification(notificationData) {
+    try {
+      console.log('Sending modal notification:', notificationData);
+      // Import the store dynamically to avoid circular dependencies
+      const { default: useNotificationStore } = await import('../store/notificationStore');
+      const store = useNotificationStore.getState();
+
+      const modalNotification = {
+        type: notificationData.type || 'alert',
+        severity: notificationData.severity || 'high',
+        title: notificationData.title || 'Alert',
+        message: notificationData.message,
+        timestamp: new Date(),
+        actionUrl: notificationData.actionUrl,
+        metadata: {
+          sentBy: 'system',
+          withAudio: true,
+          ...notificationData.metadata
+        }
+      };
+
+      console.log('Showing modal notification:', modalNotification);
+      // Show the modal notification
+      store.showModalNotification(modalNotification);
+
+      // Also send to backend if needed
+      if (notificationData.sendToBackend !== false) {
+        const requestData = {
+          ...modalNotification,
+          sendInApp: true,
+          sendModal: true
+        };
+
+        try {
+          await this.makeRequest('POST', '/notifications/send', requestData);
+        } catch (error) {
+          console.warn('Failed to send modal notification to backend:', error);
+          // Don't throw error here as the modal is already shown
+        }
+      }
+
+      return { success: true, notification: modalNotification };
+    } catch (error) {
+      console.error('Failed to send modal notification:', error);
+      throw new Error('Failed to send modal notification');
+    }
+  }
+
+  // Send emergency modal alert (high priority with audio)
+  async sendEmergencyModal(title, message, options = {}) {
+    return this.sendModalNotification({
+      type: 'emergency',
+      severity: 'critical',
+      title: title || '🚨 Emergency Alert',
+      message,
+      ...options
+    });
+  }
+
   // Get notification history
   async getNotificationHistory(filters = {}) {
     try {

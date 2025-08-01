@@ -1,47 +1,146 @@
+import React from "react";
 import { motion } from "framer-motion";
 import { useSidebar } from "../../components/layout/DashboardLayout";
 import { useState, useEffect } from "react";
 import { Radio, MessageSquare, Phone, Users, Signal, Battery, Wifi, Send, Mic, MicOff } from "lucide-react";
 import { useAuthStore } from "../../store/authStore";
+import { useSocket } from "../../hooks/useSocket";
+import axios from "axios";
 
 const StatusCommunicationPage = () => {
   const { sidebarOpen } = useSidebar();
   const { user } = useAuthStore();
+  const {
+    isConnected,
+    messages,
+    unreadCount,
+    sendTeamMessage,
+    broadcastMessage,
+    markMessageAsRead,
+    updateStatus
+  } = useSocket();
+
   const [currentStatus, setCurrentStatus] = useState('available');
   const [message, setMessage] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [batteryLevel, setBatteryLevel] = useState(85);
   const [signalStrength, setSignalStrength] = useState(4);
-  const [isOnline, setIsOnline] = useState(true);
+  const [teamMembers, setTeamMembers] = useState([]);
+  const [messageStats, setMessageStats] = useState({
+    totalSent: 0,
+    totalReceived: 0,
+    unreadCount: 0,
+    emergencyCount: 0
+  });
 
-  // Mock communication statistics
+  // State for storing fetched messages from API
+  const [fetchedMessages, setFetchedMessages] = useState([]);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(true);
+
+  // Fetch initial data
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoadingMessages(true);
+
+        // Configure API base URL
+        const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+        // Configure axios for authenticated requests
+        const axiosConfig = {
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        };
+
+        // Fetch existing messages
+        const messagesResponse = await axios.get(`${API_BASE_URL}/messages?limit=50`, axiosConfig);
+        if (messagesResponse.data.success) {
+          setFetchedMessages(messagesResponse.data.data.messages || []);
+        }
+
+        // Fetch message statistics
+        const statsResponse = await axios.get(`${API_BASE_URL}/messages/stats`, axiosConfig);
+        if (statsResponse.data.success) {
+          setMessageStats(statsResponse.data.data);
+        }
+
+        // Fetch team members (responders in same zone or all responders)
+        const teamResponse = await axios.get(`${API_BASE_URL}/dashboard/responders`, axiosConfig);
+        if (teamResponse.data.success) {
+          setTeamMembers(teamResponse.data.data.filter(member =>
+            member.id !== user.id && member.isActive
+          ));
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        // Log more details about the error
+        if (error.response) {
+          console.error('Response error:', error.response.status, error.response.data);
+        } else if (error.request) {
+          console.error('Request error:', error.request);
+        } else {
+          console.error('Error message:', error.message);
+        }
+      } finally {
+        setIsLoadingMessages(false);
+      }
+    };
+
+    if (user) {
+      fetchData();
+    }
+  }, [user]);
+
+  // Combine fetched messages with real-time messages, avoiding duplicates
+  const allMessages = React.useMemo(() => {
+    const messageMap = new Map();
+
+    // Add fetched messages first
+    fetchedMessages.forEach(msg => {
+      messageMap.set(msg.id || msg._id, msg);
+    });
+
+    // Add real-time messages, they will override if same ID
+    messages.forEach(msg => {
+      messageMap.set(msg.id || msg._id, msg);
+    });
+
+    // Convert back to array and sort by timestamp (newest first)
+    return Array.from(messageMap.values()).sort((a, b) =>
+      new Date(b.timestamp || b.createdAt) - new Date(a.timestamp || a.createdAt)
+    );
+  }, [fetchedMessages, messages]);
+
+  // Communication statistics based on real data
   const commStats = [
-    { 
-      label: "Messages Sent", 
-      value: "47", 
+    {
+      label: "Messages Sent",
+      value: messageStats.totalSent.toString(),
       color: "from-blue-500 to-blue-600",
-      change: "+12",
+      change: `+${Math.floor(messageStats.totalSent * 0.2)}`,
       icon: MessageSquare
     },
-    { 
-      label: "Radio Calls", 
-      value: "23", 
+    {
+      label: "Messages Received",
+      value: messageStats.totalReceived.toString(),
       color: "from-green-500 to-green-600",
-      change: "+8",
+      change: `+${Math.floor(messageStats.totalReceived * 0.15)}`,
       icon: Radio
     },
-    { 
-      label: "Team Members", 
-      value: "12", 
+    {
+      label: "Team Members",
+      value: teamMembers.length.toString(),
       color: "from-purple-500 to-purple-600",
       change: "online",
       icon: Users
     },
-    { 
-      label: "Signal Quality", 
-      value: "Excellent", 
+    {
+      label: "Signal Quality",
+      value: isConnected ? "Excellent" : "Poor",
       color: "from-orange-500 to-orange-600",
-      change: "stable",
+      change: isConnected ? "stable" : "unstable",
       icon: Signal
     }
   ];
@@ -53,70 +152,6 @@ const StatusCommunicationPage = () => {
     { value: 'busy', label: 'Busy', color: 'bg-yellow-600', description: 'Handling incident' },
     { value: 'break', label: 'On Break', color: 'bg-purple-600', description: 'Taking a break' },
     { value: 'offline', label: 'Offline', color: 'bg-gray-600', description: 'Not available' }
-  ];
-
-  // Mock team members
-  const teamMembers = [
-    {
-      id: 1,
-      name: "Sarah Johnson",
-      role: "Team Lead",
-      status: "available",
-      lastSeen: "2 min ago",
-      location: "East Zone"
-    },
-    {
-      id: 2,
-      name: "Mike Chen",
-      role: "Responder",
-      status: "responding",
-      lastSeen: "5 min ago",
-      location: "West Zone"
-    },
-    {
-      id: 3,
-      name: "Emily Davis",
-      role: "Responder",
-      status: "busy",
-      lastSeen: "1 min ago",
-      location: "South Zone"
-    },
-    {
-      id: 4,
-      name: "Alex Rodriguez",
-      role: "Responder",
-      status: "available",
-      lastSeen: "3 min ago",
-      location: "North Zone"
-    }
-  ];
-
-  // Mock recent messages
-  const recentMessages = [
-    {
-      id: 1,
-      sender: "Command Center",
-      message: "All units, be advised of crowd surge in South Zone",
-      timestamp: new Date(Date.now() - 5 * 60 * 1000),
-      type: "broadcast",
-      priority: "high"
-    },
-    {
-      id: 2,
-      sender: "Sarah Johnson",
-      message: "Medical emergency resolved at East Zone entrance",
-      timestamp: new Date(Date.now() - 15 * 60 * 1000),
-      type: "team",
-      priority: "normal"
-    },
-    {
-      id: 3,
-      sender: "Mike Chen",
-      message: "Requesting backup at West Zone security checkpoint",
-      timestamp: new Date(Date.now() - 25 * 60 * 1000),
-      type: "team",
-      priority: "high"
-    }
   ];
 
   const getStatusColor = (status) => {
@@ -135,21 +170,43 @@ const StatusCommunicationPage = () => {
 
   const handleStatusChange = (newStatus) => {
     setCurrentStatus(newStatus);
-    // In a real app, this would update the status via WebSocket
+    updateStatus(newStatus);
     console.log("Status changed to:", newStatus);
   };
 
   const handleSendMessage = () => {
-    if (message.trim()) {
-      console.log("Sending message:", message);
+    if (message.trim() && isConnected) {
+      const messageData = {
+        content: message.trim(),
+        type: 'team',
+        priority: 'normal',
+        recipients: 'responders'
+      };
+
+      sendTeamMessage(messageData);
       setMessage('');
-      // In a real app, this would send the message via WebSocket
     }
+  };
+
+  const handleBroadcastMessage = (content, priority = 'high') => {
+    if (content.trim() && isConnected) {
+      const messageData = {
+        content: content.trim(),
+        priority,
+        recipients: 'all'
+      };
+
+      broadcastMessage(messageData);
+    }
+  };
+
+  const handleMessageClick = (messageId) => {
+    markMessageAsRead(messageId);
   };
 
   const toggleRecording = () => {
     setIsRecording(!isRecording);
-    // In a real app, this would start/stop voice recording
+    // Voice recording functionality would be implemented here
   };
 
   return (
@@ -172,11 +229,19 @@ const StatusCommunicationPage = () => {
         <div className="flex items-center space-x-4">
           {/* Connection Status */}
           <div className="flex items-center space-x-2">
-            <div className={`w-3 h-3 rounded-full ${isOnline ? 'bg-green-500' : 'bg-red-500'} animate-pulse`}></div>
-            <span className={`text-sm ${isOnline ? 'text-green-400' : 'text-red-400'}`}>
-              {isOnline ? 'ONLINE' : 'OFFLINE'}
+            <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'} animate-pulse`}></div>
+            <span className={`text-sm ${isConnected ? 'text-green-400' : 'text-red-400'}`}>
+              {isConnected ? 'ONLINE' : 'OFFLINE'}
             </span>
           </div>
+
+          {/* Unread Messages Count */}
+          {unreadCount > 0 && (
+            <div className="flex items-center space-x-2">
+              <MessageSquare className="h-4 w-4 text-blue-400" />
+              <span className="text-sm text-blue-400">{unreadCount} unread</span>
+            </div>
+          )}
           
           {/* Battery Level */}
           <div className="flex items-center space-x-1">
@@ -283,36 +348,60 @@ const StatusCommunicationPage = () => {
             
             {/* Recent Messages */}
             <div className="p-4 space-y-3 max-h-80 overflow-y-auto">
-              {recentMessages.map((msg, index) => (
-                <motion.div
-                  key={msg.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5 + index * 0.1 }}
-                  className={`p-3 bg-gray-800 rounded-lg border-l-4 ${getPriorityColor(msg.priority)}`}
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <h4 className="text-white font-medium text-sm">{msg.sender}</h4>
-                    <span className="text-gray-500 text-xs">
-                      {msg.timestamp.toLocaleTimeString()}
-                    </span>
-                  </div>
-                  <p className="text-gray-300 text-sm">{msg.message}</p>
-                  <div className="flex items-center justify-between mt-2">
-                    <span className={`text-xs px-2 py-1 rounded ${
-                      msg.type === 'broadcast' ? 'bg-red-600 text-white' : 'bg-blue-600 text-white'
-                    }`}>
-                      {msg.type}
-                    </span>
-                    <span className={`text-xs ${
-                      msg.priority === 'high' ? 'text-red-400' : 
-                      msg.priority === 'medium' ? 'text-yellow-400' : 'text-green-400'
-                    }`}>
-                      {msg.priority} priority
-                    </span>
-                  </div>
-                </motion.div>
-              ))}
+              {isLoadingMessages ? (
+                <div className="text-center text-gray-400 py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-400 mx-auto mb-4"></div>
+                  <p>Loading messages...</p>
+                </div>
+              ) : allMessages.length === 0 ? (
+                <div className="text-center text-gray-400 py-8">
+                  <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No messages yet</p>
+                  <p className="text-sm">Start a conversation with your team</p>
+                </div>
+              ) : (
+                allMessages.map((msg, index) => (
+                  <motion.div
+                    key={msg.id || msg._id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 + index * 0.05 }}
+                    className={`p-3 bg-gray-800 rounded-lg border-l-4 ${getPriorityColor(msg.priority)} cursor-pointer hover:bg-gray-750 transition-colors`}
+                    onClick={() => handleMessageClick(msg.id || msg._id)}
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <h4 className="text-white font-medium text-sm">
+                        {msg.sender?.name || msg.senderName}
+                      </h4>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-gray-500 text-xs">
+                          {new Date(msg.timestamp || msg.createdAt).toLocaleTimeString()}
+                        </span>
+                        {msg.isEmergency && (
+                          <span className="text-red-400 text-xs font-bold">!</span>
+                        )}
+                      </div>
+                    </div>
+                    <p className="text-gray-300 text-sm">{msg.content}</p>
+                    <div className="flex items-center justify-between mt-2">
+                      <span className={`text-xs px-2 py-1 rounded ${
+                        msg.type === 'broadcast' ? 'bg-red-600 text-white' :
+                        msg.type === 'emergency' ? 'bg-red-700 text-white' :
+                        'bg-blue-600 text-white'
+                      }`}>
+                        {msg.type}
+                      </span>
+                      <span className={`text-xs ${
+                        msg.priority === 'critical' ? 'text-red-400' :
+                        msg.priority === 'high' ? 'text-orange-400' :
+                        msg.priority === 'normal' ? 'text-yellow-400' : 'text-green-400'
+                      }`}>
+                        {msg.priority} priority
+                      </span>
+                    </div>
+                  </motion.div>
+                ))
+              )}
             </div>
             
             {/* Message Input */}
@@ -322,23 +411,25 @@ const StatusCommunicationPage = () => {
                   type="text"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Type your message..."
-                  className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  placeholder={isConnected ? "Type your message..." : "Connecting..."}
+                  className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
                   onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                  disabled={!isConnected}
                 />
-                
+
                 <button
                   onClick={toggleRecording}
-                  className={`p-2 rounded-lg transition-colors duration-200 ${
+                  disabled={!isConnected}
+                  className={`p-2 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
                     isRecording ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-700 hover:bg-gray-600'
                   } text-white`}
                 >
                   {isRecording ? <MicOff size={20} /> : <Mic size={20} />}
                 </button>
-                
+
                 <button
                   onClick={handleSendMessage}
-                  disabled={!message.trim()}
+                  disabled={!message.trim() || !isConnected}
                   className="p-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white rounded-lg transition-colors duration-200"
                 >
                   <Send size={20} />
@@ -362,33 +453,61 @@ const StatusCommunicationPage = () => {
             </div>
             
             <div className="p-4 space-y-3 max-h-96 overflow-y-auto">
-              {teamMembers.map((member, index) => (
-                <motion.div
-                  key={member.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6 + index * 0.1 }}
-                  className="p-3 bg-gray-800 rounded-lg"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-white font-medium text-sm">{member.name}</h4>
-                    <div className={`w-3 h-3 rounded-full ${getStatusColor(member.status)}`}></div>
-                  </div>
-                  
-                  <p className="text-gray-400 text-xs mb-1">{member.role}</p>
-                  <p className="text-gray-500 text-xs">{member.location}</p>
-                  <p className="text-gray-500 text-xs">Last seen: {member.lastSeen}</p>
-                  
-                  <div className="flex items-center space-x-2 mt-2">
-                    <button className="flex-1 px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs transition-colors duration-200">
-                      Message
-                    </button>
-                    <button className="flex-1 px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs transition-colors duration-200">
-                      Call
-                    </button>
-                  </div>
-                </motion.div>
-              ))}
+              {teamMembers.length === 0 ? (
+                <div className="text-center text-gray-400 py-8">
+                  <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No team members online</p>
+                </div>
+              ) : (
+                teamMembers.map((member, index) => (
+                  <motion.div
+                    key={member.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 + index * 0.05 }}
+                    className="p-3 bg-gray-800 rounded-lg"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-white font-medium text-sm">{member.name}</h4>
+                      <div className={`w-3 h-3 rounded-full ${getStatusColor(member.status || 'available')}`}></div>
+                    </div>
+
+                    <p className="text-gray-400 text-xs mb-1">{member.role}</p>
+                    <p className="text-gray-500 text-xs">{member.assignedZone || 'No zone assigned'}</p>
+                    <p className="text-gray-500 text-xs">
+                      Last seen: {member.lastLogin ? new Date(member.lastLogin).toLocaleString() : 'Never'}
+                    </p>
+
+                    <div className="flex items-center space-x-2 mt-2">
+                      <button
+                        onClick={() => {
+                          // Send direct message to this team member
+                          const directMessage = prompt(`Send message to ${member.name}:`);
+                          if (directMessage && directMessage.trim()) {
+                            sendTeamMessage({
+                              content: directMessage.trim(),
+                              type: 'direct',
+                              priority: 'normal',
+                              recipients: 'specific',
+                              specificRecipients: [member.id]
+                            });
+                          }
+                        }}
+                        disabled={!isConnected}
+                        className="flex-1 px-2 py-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded text-xs transition-colors duration-200"
+                      >
+                        Message
+                      </button>
+                      <button
+                        disabled={!isConnected}
+                        className="flex-1 px-2 py-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded text-xs transition-colors duration-200"
+                      >
+                        Call
+                      </button>
+                    </div>
+                  </motion.div>
+                ))
+              )}
             </div>
           </div>
         </motion.div>
@@ -404,22 +523,62 @@ const StatusCommunicationPage = () => {
         <h3 className="text-lg font-semibold text-white mb-4">Quick Communication</h3>
         
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <button className="p-4 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors duration-200 text-center">
+          <button
+            onClick={() => {
+              const emergencyMessage = prompt("Emergency message:");
+              if (emergencyMessage && emergencyMessage.trim()) {
+                handleBroadcastMessage(emergencyMessage.trim(), 'critical');
+              }
+            }}
+            disabled={!isConnected}
+            className="p-4 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors duration-200 text-center"
+          >
             <Phone className="h-6 w-6 mx-auto mb-2" />
-            <span className="text-sm font-medium">Emergency Call</span>
+            <span className="text-sm font-medium">Emergency Alert</span>
           </button>
-          
-          <button className="p-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 text-center">
+
+          <button
+            onClick={() => {
+              sendTeamMessage({
+                content: "Radio check - testing communication",
+                type: 'team',
+                priority: 'normal',
+                recipients: 'responders'
+              });
+            }}
+            disabled={!isConnected}
+            className="p-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors duration-200 text-center"
+          >
             <Radio className="h-6 w-6 mx-auto mb-2" />
             <span className="text-sm font-medium">Radio Check</span>
           </button>
-          
-          <button className="p-4 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors duration-200 text-center">
+
+          <button
+            onClick={() => {
+              const broadcastMessage = prompt("Broadcast message to all:");
+              if (broadcastMessage && broadcastMessage.trim()) {
+                handleBroadcastMessage(broadcastMessage.trim(), 'high');
+              }
+            }}
+            disabled={!isConnected}
+            className="p-4 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors duration-200 text-center"
+          >
             <MessageSquare className="h-6 w-6 mx-auto mb-2" />
             <span className="text-sm font-medium">Broadcast</span>
           </button>
-          
-          <button className="p-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors duration-200 text-center">
+
+          <button
+            onClick={() => {
+              sendTeamMessage({
+                content: "Team call requested - please respond",
+                type: 'team',
+                priority: 'high',
+                recipients: 'responders'
+              });
+            }}
+            disabled={!isConnected}
+            className="p-4 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors duration-200 text-center"
+          >
             <Users className="h-6 w-6 mx-auto mb-2" />
             <span className="text-sm font-medium">Team Call</span>
           </button>

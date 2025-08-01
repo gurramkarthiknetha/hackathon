@@ -14,8 +14,11 @@ import {
 	Zap,
 	Shield,
 	Eye,
-	Brain
+	Brain,
+	Bell
 } from "lucide-react";
+import { toast } from "react-hot-toast";
+import notificationService from "../../services/notificationService";
 
 // Import dashboard components
 import LiveVideoFeed from "../../components/monitoring/LiveVideoFeed";
@@ -85,6 +88,27 @@ const OperatorDashboard = () => {
 		setTimelineFilter(prev => ({ ...prev, ...newFilter }));
 	};
 
+	const handleTestModalNotification = async () => {
+		try {
+			await notificationService.sendModalNotification({
+				type: 'incident',
+				severity: 'high',
+				title: '⚠️ Security Breach Detected',
+				message: 'Unauthorized access detected in Zone A. Immediate response required. Security personnel have been notified.',
+				actionUrl: '/dashboard/operator/alerts',
+				metadata: {
+					zone: 'Zone A',
+					detectionType: 'unauthorized_access',
+					confidence: 95
+				}
+			});
+			toast.success('Test security alert triggered!');
+		} catch (error) {
+			console.error('Test notification error:', error);
+			toast.error('Failed to trigger test notification');
+		}
+	};
+
 	if (loading) {
 		return (
 			<div className="flex items-center justify-center h-full">
@@ -113,6 +137,13 @@ const OperatorDashboard = () => {
 						</p>
 					</div>
 					<div className="flex items-center space-x-4">
+						<button
+							onClick={handleTestModalNotification}
+							className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center space-x-2"
+						>
+							<Bell className="h-4 w-4" />
+							<span>Test Alert</span>
+						</button>
 						<div className="flex items-center space-x-2">
 							<div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
 							<span className="text-green-400 text-sm font-medium">LIVE</span>

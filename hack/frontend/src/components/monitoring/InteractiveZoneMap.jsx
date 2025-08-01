@@ -1,112 +1,116 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { 
-  Map, 
-  MapPin, 
-  Users, 
-  AlertTriangle, 
-  Navigation, 
+import {
+  Map,
+  MapPin,
+  Users,
+  AlertTriangle,
+  Navigation,
   Zap,
   Shield,
   Camera,
   Radio,
   Activity
 } from "lucide-react";
+import GoogleMap from "../maps/GoogleMap";
+import LocationControl from "../maps/LocationControl";
 
 const InteractiveZoneMap = ({ onIncidentSelect, selectedIncident }) => {
   const [selectedZone, setSelectedZone] = useState(null);
   const [showResponders, setShowResponders] = useState(true);
   const [showIncidents, setShowIncidents] = useState(true);
+  const [mapCenter, setMapCenter] = useState({ lat: 40.7128, lng: -74.0060 });
+  const [centerOnUser, setCenterOnUser] = useState(false);
 
-  // Mock zones data
+  // Mock zones data with real coordinates
   const zones = [
     {
       id: "east_zone",
       name: "East Zone",
-      center: { x: 70, y: 40 },
-      size: { width: 25, height: 20 },
+      center: { lat: 40.7138, lng: -74.0050 },
       capacity: 5000,
       currentOccupancy: 3200,
       riskLevel: "medium",
-      color: "border-yellow-500 bg-yellow-500/10"
+      color: "border-yellow-500 bg-yellow-500/10",
+      radius: 100 // meters
     },
     {
-      id: "west_zone", 
+      id: "west_zone",
       name: "West Zone",
-      center: { x: 20, y: 40 },
-      size: { width: 25, height: 20 },
+      center: { lat: 40.7118, lng: -74.0070 },
       capacity: 2000,
       currentOccupancy: 800,
       riskLevel: "low",
-      color: "border-green-500 bg-green-500/10"
+      color: "border-green-500 bg-green-500/10",
+      radius: 80
     },
     {
       id: "north_zone",
-      name: "North Zone", 
-      center: { x: 45, y: 15 },
-      size: { width: 20, height: 15 },
+      name: "North Zone",
+      center: { lat: 40.7148, lng: -74.0060 },
       capacity: 500,
       currentOccupancy: 120,
       riskLevel: "low",
-      color: "border-green-500 bg-green-500/10"
+      color: "border-green-500 bg-green-500/10",
+      radius: 60
     },
     {
       id: "south_zone",
       name: "South Zone",
-      center: { x: 45, y: 75 },
-      size: { width: 20, height: 15 },
+      center: { lat: 40.7108, lng: -74.0060 },
       capacity: 1000,
       currentOccupancy: 450,
-      riskLevel: "low", 
-      color: "border-green-500 bg-green-500/10"
+      riskLevel: "low",
+      color: "border-green-500 bg-green-500/10",
+      radius: 70
     }
   ];
 
-  // Mock responders data
+  // Mock responders data with real coordinates
   const [responders, setResponders] = useState([
-    { id: 1, name: "Team Alpha", position: { x: 65, y: 35 }, status: "active", zone: "east_zone" },
-    { id: 2, name: "Team Beta", position: { x: 25, y: 45 }, status: "active", zone: "west_zone" },
-    { id: 3, name: "Team Gamma", position: { x: 50, y: 20 }, status: "responding", zone: "north_zone" },
-    { id: 4, name: "Team Delta", position: { x: 40, y: 70 }, status: "active", zone: "south_zone" },
-    { id: 5, name: "Team Echo", position: { x: 75, y: 50 }, status: "responding", zone: "east_zone" }
+    { id: 1, name: "Team Alpha", position: { lat: 40.7135, lng: -74.0052 }, status: "active", zone: "east_zone" },
+    { id: 2, name: "Team Beta", position: { lat: 40.7120, lng: -74.0068 }, status: "active", zone: "west_zone" },
+    { id: 3, name: "Team Gamma", position: { lat: 40.7145, lng: -74.0062 }, status: "responding", zone: "north_zone" },
+    { id: 4, name: "Team Delta", position: { lat: 40.7110, lng: -74.0058 }, status: "active", zone: "south_zone" },
+    { id: 5, name: "Team Echo", position: { lat: 40.7140, lng: -74.0048 }, status: "responding", zone: "east_zone" }
   ]);
 
-  // Mock incidents data
+  // Mock incidents data with real coordinates
   const incidents = [
-    { 
-      id: 1, 
-      type: "fire", 
-      position: { x: 48, y: 18 }, 
-      severity: "critical", 
+    {
+      id: 1,
+      type: "fire",
+      position: { lat: 40.7146, lng: -74.0061 },
+      severity: "critical",
       zone: "north_zone",
       description: "Equipment fire detected"
     },
-    { 
-      id: 2, 
-      type: "crowd_surge", 
-      position: { x: 72, y: 42 }, 
-      severity: "high", 
+    {
+      id: 2,
+      type: "crowd_surge",
+      position: { lat: 40.7136, lng: -74.0051 },
+      severity: "high",
       zone: "east_zone",
       description: "Crowd density critical"
     },
-    { 
-      id: 3, 
-      type: "medical_emergency", 
-      position: { x: 22, y: 38 }, 
-      severity: "medium", 
+    {
+      id: 3,
+      type: "medical_emergency",
+      position: { lat: 40.7116, lng: -74.0069 },
+      severity: "medium",
       zone: "west_zone",
       description: "Medical assistance needed"
     }
   ];
 
-  // Simulate responder movement
+  // Simulate responder movement with real coordinates
   useEffect(() => {
     const interval = setInterval(() => {
       setResponders(prev => prev.map(responder => ({
         ...responder,
         position: {
-          x: Math.max(5, Math.min(95, responder.position.x + (Math.random() - 0.5) * 2)),
-          y: Math.max(5, Math.min(95, responder.position.y + (Math.random() - 0.5) * 2))
+          lat: Math.max(40.7100, Math.min(40.7160, responder.position.lat + (Math.random() - 0.5) * 0.0005)),
+          lng: Math.max(-74.0080, Math.min(-74.0040, responder.position.lng + (Math.random() - 0.5) * 0.0005))
         }
       })));
     }, 5000);
@@ -151,6 +155,96 @@ const InteractiveZoneMap = ({ onIncidentSelect, selectedIncident }) => {
     onIncidentSelect && onIncidentSelect(incident);
   };
 
+  // Create markers for Google Map
+  const createMapMarkers = () => {
+    const markers = [];
+
+    // Add zone markers
+    zones.forEach(zone => {
+      const color = zone.riskLevel === 'high' ? 'red' : zone.riskLevel === 'medium' ? 'orange' : 'green';
+      markers.push({
+        id: `zone-${zone.id}`,
+        position: zone.center,
+        title: `${zone.name} - ${zone.currentOccupancy}/${zone.capacity}`,
+        icon: {
+          path: window.google?.maps?.SymbolPath?.CIRCLE || 0,
+          fillColor: color,
+          fillOpacity: 0.8,
+          strokeColor: 'white',
+          strokeWeight: 2,
+          scale: 20
+        },
+        type: 'zone',
+        data: zone
+      });
+    });
+
+    // Add incident markers
+    if (showIncidents) {
+      incidents.forEach(incident => {
+        const color = incident.severity === 'critical' ? '#dc2626' :
+                     incident.severity === 'high' ? '#ea580c' :
+                     incident.severity === 'medium' ? '#d97706' : '#16a34a';
+        markers.push({
+          id: `incident-${incident.id}`,
+          position: incident.position,
+          title: `${incident.type}: ${incident.description}`,
+          icon: {
+            path: window.google?.maps?.SymbolPath?.BACKWARD_CLOSED_ARROW || 3,
+            fillColor: color,
+            fillOpacity: 1,
+            strokeColor: 'white',
+            strokeWeight: 2,
+            scale: 8,
+            rotation: 180
+          },
+          type: 'incident',
+          data: incident
+        });
+      });
+    }
+
+    // Add responder markers
+    if (showResponders) {
+      responders.forEach(responder => {
+        const color = responder.status === 'active' ? '#10b981' :
+                     responder.status === 'responding' ? '#3b82f6' : '#6b7280';
+        markers.push({
+          id: `responder-${responder.id}`,
+          position: responder.position,
+          title: `${responder.name} - ${responder.status}`,
+          icon: {
+            path: window.google?.maps?.SymbolPath?.CIRCLE || 0,
+            fillColor: color,
+            fillOpacity: 1,
+            strokeColor: 'white',
+            strokeWeight: 2,
+            scale: 8
+          },
+          type: 'responder',
+          data: responder
+        });
+      });
+    }
+
+    return markers;
+  };
+
+  const handleMarkerClick = (marker) => {
+    if (marker.type === 'zone') {
+      handleZoneClick(marker.data);
+    } else if (marker.type === 'incident') {
+      handleIncidentClick(marker.data);
+    }
+  };
+
+  const handleLocationUpdate = (location) => {
+    setMapCenter({ lat: location.lat, lng: location.lng });
+    setCenterOnUser(true);
+    // Reset centerOnUser after a short delay to allow for manual map movement
+    setTimeout(() => setCenterOnUser(false), 1000);
+  };
+
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
@@ -167,115 +261,87 @@ const InteractiveZoneMap = ({ onIncidentSelect, selectedIncident }) => {
           </div>
         </div>
 
-        {/* Toggle Controls */}
-        <div className="flex space-x-4">
-          <label className="flex items-center space-x-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={showResponders}
-              onChange={(e) => setShowResponders(e.target.checked)}
-              className="w-4 h-4 text-cyan-600 bg-gray-700 border-gray-600 rounded focus:ring-cyan-500"
-            />
-            <span className="text-gray-300 text-sm">Show Responders</span>
-          </label>
-          <label className="flex items-center space-x-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={showIncidents}
-              onChange={(e) => setShowIncidents(e.target.checked)}
-              className="w-4 h-4 text-cyan-600 bg-gray-700 border-gray-600 rounded focus:ring-cyan-500"
-            />
-            <span className="text-gray-300 text-sm">Show Incidents</span>
-          </label>
+        {/* Controls */}
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+          {/* Toggle Controls */}
+          <div className="flex space-x-4">
+            <label className="flex items-center space-x-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showResponders}
+                onChange={(e) => setShowResponders(e.target.checked)}
+                className="w-4 h-4 text-cyan-600 bg-gray-700 border-gray-600 rounded focus:ring-cyan-500"
+              />
+              <span className="text-gray-300 text-sm">Show Responders</span>
+            </label>
+            <label className="flex items-center space-x-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showIncidents}
+                onChange={(e) => setShowIncidents(e.target.checked)}
+                className="w-4 h-4 text-cyan-600 bg-gray-700 border-gray-600 rounded focus:ring-cyan-500"
+              />
+              <span className="text-gray-300 text-sm">Show Incidents</span>
+            </label>
+          </div>
+
+          {/* Location Control */}
+          <LocationControl onLocationUpdate={handleLocationUpdate} />
         </div>
       </div>
 
       {/* Map Container */}
       <div className="flex-1 relative bg-gray-900 overflow-hidden">
-        <div className="w-full h-full relative">
-          {/* Background Grid */}
-          <div className="absolute inset-0 opacity-20">
-            <svg width="100%" height="100%" className="text-gray-600">
-              <defs>
-                <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-                  <path d="M 20 0 L 0 0 0 20" fill="none" stroke="currentColor" strokeWidth="0.5"/>
-                </pattern>
-              </defs>
-              <rect width="100%" height="100%" fill="url(#grid)" />
-            </svg>
-          </div>
-
-          {/* Zones */}
-          {zones.map((zone) => (
-            <motion.div
-              key={zone.id}
-              className={`absolute border-2 rounded-lg cursor-pointer transition-all duration-300 ${zone.color} ${
-                selectedZone?.id === zone.id ? 'ring-2 ring-cyan-500' : ''
-              } ${selectedIncident?.zone === zone.id ? 'ring-2 ring-red-500 animate-pulse' : ''}`}
-              style={{
-                left: `${zone.center.x - zone.size.width/2}%`,
-                top: `${zone.center.y - zone.size.height/2}%`,
-                width: `${zone.size.width}%`,
-                height: `${zone.size.height}%`,
-              }}
-              onClick={() => handleZoneClick(zone)}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <div className="p-2 h-full flex flex-col justify-center items-center text-center">
-                <h4 className="text-white font-medium text-sm mb-1">{zone.name}</h4>
-                <div className="text-xs text-gray-300">
-                  <div>{zone.currentOccupancy}/{zone.capacity}</div>
-                  <div className="text-xs text-gray-400">
-                    {Math.round((zone.currentOccupancy / zone.capacity) * 100)}% capacity
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-
-          {/* Incidents */}
-          {showIncidents && incidents.map((incident) => (
-            <motion.div
-              key={incident.id}
-              className={`absolute w-6 h-6 rounded-full border-2 cursor-pointer flex items-center justify-center text-xs ${getSeverityColor(incident.severity)} animate-pulse`}
-              style={{
-                left: `${incident.position.x}%`,
-                top: `${incident.position.y}%`,
-                transform: 'translate(-50%, -50%)'
-              }}
-              onClick={() => handleIncidentClick(incident)}
-              whileHover={{ scale: 1.2 }}
-              whileTap={{ scale: 0.9 }}
-              title={`${incident.type}: ${incident.description}`}
-            >
-              <span className="text-white font-bold">!</span>
-            </motion.div>
-          ))}
-
-          {/* Responders */}
-          {showResponders && responders.map((responder) => (
-            <motion.div
-              key={responder.id}
-              className={`absolute w-4 h-4 rounded-full border-2 ${getResponderStatusColor(responder.status)}`}
-              style={{
-                left: `${responder.position.x}%`,
-                top: `${responder.position.y}%`,
-                transform: 'translate(-50%, -50%)'
-              }}
-              animate={{
-                x: [0, 2, 0, -2, 0],
-                y: [0, -1, 0, 1, 0]
-              }}
-              transition={{
-                duration: 4,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-              title={`${responder.name} - ${responder.status}`}
-            />
-          ))}
-        </div>
+        <GoogleMap
+          center={mapCenter}
+          zoom={16}
+          markers={createMapMarkers()}
+          onMarkerClick={handleMarkerClick}
+          showUserLocation={true}
+          centerOnUserLocation={centerOnUser}
+          className="w-full h-full"
+          mapOptions={{
+            styles: [
+              {
+                featureType: "all",
+                elementType: "geometry.fill",
+                stylers: [{ color: "#1f2937" }]
+              },
+              {
+                featureType: "all",
+                elementType: "labels.text.fill",
+                stylers: [{ color: "#9ca3af" }]
+              },
+              {
+                featureType: "road",
+                elementType: "geometry",
+                stylers: [{ color: "#374151" }]
+              },
+              {
+                featureType: "water",
+                elementType: "geometry",
+                stylers: [{ color: "#1e40af" }]
+              },
+              {
+                featureType: "poi",
+                elementType: "geometry",
+                stylers: [{ color: "#374151" }]
+              },
+              {
+                featureType: "poi.park",
+                elementType: "geometry",
+                stylers: [{ color: "#065f46" }]
+              }
+            ],
+            disableDefaultUI: false,
+            zoomControl: true,
+            mapTypeControl: false,
+            scaleControl: true,
+            streetViewControl: false,
+            rotateControl: false,
+            fullscreenControl: true
+          }}
+        />
       </div>
 
       {/* Zone Details Panel */}
