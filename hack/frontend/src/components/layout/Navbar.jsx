@@ -38,11 +38,20 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
           </button>
           
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-emerald-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">H</span>
-            </div>
+            <div className="w-8 h-8 flex items-center justify-center">
+              <img 
+                src="/logo.png" 
+                alt="logo"
+                style={{
+                  width: "100%", 
+                  height: "40px", 
+                  borderRadius: "15%",   
+                  objectFit: "cover",    
+                }} 
+              />
+          </div>
             <h1 className="text-xl font-bold bg-gradient-to-r from-green-400 to-emerald-600 text-transparent bg-clip-text hidden sm:block">
-              Hackathon Dashboard
+              AI Event Monitor
             </h1>
           </div>
         </div>

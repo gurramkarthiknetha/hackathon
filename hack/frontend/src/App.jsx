@@ -10,12 +10,16 @@ import LoadingSpinner from "./components/ui/LoadingSpinner";
 // Dashboard Layout and Pages
 import DashboardLayout from "./components/layout/DashboardLayout";
 import HomePage from "./pages/dashboard/HomePage";
+import AdminDashboard from "./pages/dashboard/AdminDashboard";
+import OperatorDashboard from "./pages/dashboard/OperatorDashboard";
+import ResponderDashboard from "./pages/dashboard/ResponderDashboard";
 import ProfilePage from "./pages/dashboard/ProfilePage";
 import ContactPage from "./pages/dashboard/ContactPage";
 import AboutPage from "./pages/dashboard/AboutPage";
 import { Toaster } from "react-hot-toast";
 import { useAuthStore } from "./store/authStore";
 import { useEffect } from "react";
+import RoleProtectedRoute from "./components/auth/RoleProtectedRoute";
 
 // protect routes that require authentication
 const ProtectedRoute = ({ children }) => {
@@ -25,22 +29,30 @@ const ProtectedRoute = ({ children }) => {
 		return <Navigate to='/login' replace />;
 	}
 
-	if (!user.isVerified) {
+	if (!user?.isVerified) {
 		return <Navigate to='/verify-email' replace />;
 	}
 
 	return children;
 };
 
-// redirect authenticated users to the dashboard
+// redirect authenticated users to the appropriate dashboard
 const RedirectAuthenticatedUser = ({ children }) => {
-	const { isAuthenticated, user } = useAuthStore();
+	const { isAuthenticated, user, getRoleBasedRoute } = useAuthStore();
 
-	if (isAuthenticated && user.isVerified) {
-		return <Navigate to='/dashboard' replace />;
+	if (isAuthenticated && user?.isVerified) {
+		const dashboardRoute = getRoleBasedRoute();
+		return <Navigate to={dashboardRoute} replace />;
 	}
 
 	return children;
+};
+
+// Component to redirect to role-based dashboard
+const RoleBasedRedirect = () => {
+	const { getRoleBasedRoute } = useAuthStore();
+	const dashboardRoute = getRoleBasedRoute();
+	return <Navigate to={dashboardRoute} replace />;
 };
 
 function App() {
@@ -62,7 +74,7 @@ function App() {
 			<FloatingShape color='bg-lime-500' size='w-32 h-32' top='40%' left='-10%' delay={2} />
 
 			<Routes>
-				{/* Dashboard Routes */}
+				{/* Role-based Dashboard Routes */}
 				<Route
 					path='/dashboard'
 					element={
@@ -71,18 +83,50 @@ function App() {
 						</ProtectedRoute>
 					}
 				>
-					<Route index element={<HomePage />} />
+					{/* Default dashboard - redirects to role-based dashboard */}
+					<Route
+						index
+						element={<RoleBasedRedirect />}
+					/>
+
+					{/* Role-specific dashboard routes */}
+					<Route
+						path='admin'
+						element={
+							<RoleProtectedRoute allowedRoles={['admin']}>
+								<AdminDashboard />
+							</RoleProtectedRoute>
+						}
+					/>
+					<Route
+						path='operator'
+						element={
+							<RoleProtectedRoute allowedRoles={['admin', 'operator']}>
+								<OperatorDashboard />
+							</RoleProtectedRoute>
+						}
+					/>
+					<Route
+						path='responder'
+						element={
+							<RoleProtectedRoute allowedRoles={['admin', 'responder']}>
+								<ResponderDashboard />
+							</RoleProtectedRoute>
+						}
+					/>
+
+					{/* Common dashboard routes accessible to all authenticated users */}
 					<Route path='profile' element={<ProfilePage />} />
 					<Route path='contact' element={<ContactPage />} />
 					<Route path='about' element={<AboutPage />} />
 				</Route>
 
-				{/* Legacy Dashboard Route - redirect to new dashboard */}
+				{/* Root route - redirect to role-based dashboard */}
 				<Route
 					path='/'
 					element={
 						<ProtectedRoute>
-							<Navigate to='/dashboard' replace />
+							<RoleBasedRedirect />
 						</ProtectedRoute>
 					}
 				/>

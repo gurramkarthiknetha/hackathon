@@ -15,6 +15,7 @@ import {
 } from "./middleware/security.js";
 
 import authRoutes from "./routes/auth.route.js";
+import dashboardRoutes from "./routes/dashboard.route.js";
 
 dotenv.config();
 
@@ -44,6 +45,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 
 app.use("/api/auth", authRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 // Global error handler (must be after all routes)
 app.use(globalErrorHandler);

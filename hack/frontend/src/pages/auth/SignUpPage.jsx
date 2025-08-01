@@ -11,6 +11,7 @@ const SignUpPage = () => {
 	const [name, setName] = useState("");
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
+	const [role, setRole] = useState("operator");
 	const [fieldErrors, setFieldErrors] = useState({});
 	const navigate = useNavigate();
 
@@ -61,7 +62,7 @@ const SignUpPage = () => {
 		}
 
 		try {
-			await signup(email, password, name);
+			await signup(email, password, name, role);
 			navigate("/verify-email");
 		} catch (error) {
 			// Error is already handled in the store
@@ -69,13 +70,14 @@ const SignUpPage = () => {
 		}
 	};
 	return (
-		<motion.div
-			initial={{ opacity: 0, y: 20 }}
-			animate={{ opacity: 1, y: 0 }}
-			transition={{ duration: 0.5 }}
-			className='max-w-md w-full bg-gray-800 bg-opacity-50 backdrop-filter backdrop-blur-xl rounded-2xl shadow-xl 
-			overflow-hidden'
-		>
+		<div className='min-h-screen flex items-center justify-center relative z-50 px-4'>
+			<motion.div
+				initial={{ opacity: 0, y: 20 }}
+				animate={{ opacity: 1, y: 0 }}
+				transition={{ duration: 0.5 }}
+				className='max-w-md w-full bg-gray-800 bg-opacity-50 backdrop-filter backdrop-blur-xl rounded-2xl shadow-xl
+				overflow-hidden'
+			>
 			<div className='p-8'>
 				<h2 className='text-3xl font-bold mb-6 text-center bg-gradient-to-r from-green-400 to-emerald-500 text-transparent bg-clip-text'>
 					Create Account
@@ -117,6 +119,22 @@ const SignUpPage = () => {
 					/>
 					<PasswordStrengthMeter password={password} />
 
+					{/* Role Selection */}
+					<div className='mb-6'>
+						<label className='block text-sm font-medium text-gray-300 mb-2'>
+							Select Role
+						</label>
+						<select
+							value={role}
+							onChange={(e) => setRole(e.target.value)}
+							className='w-full px-3 py-2 bg-gray-800 bg-opacity-50 rounded-lg border border-gray-700 focus:border-green-500 focus:ring-2 focus:ring-green-500 text-white placeholder-gray-400 transition duration-200'
+						>
+							<option value="operator">Operator</option>
+							<option value="responder">Responder</option>
+							<option value="admin">Admin</option>
+						</select>
+					</div>
+
 					<motion.button
 						className='mt-5 w-full py-3 px-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white 
 						font-bold rounded-lg shadow-lg hover:from-green-600
@@ -140,6 +158,7 @@ const SignUpPage = () => {
 				</p>
 			</div>
 		</motion.div>
-	);
+	</div>
+);
 };
 export default SignUpPage;

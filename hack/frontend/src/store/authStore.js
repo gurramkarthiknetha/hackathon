@@ -33,7 +33,7 @@ axios.interceptors.response.use(
 	}
 );
 
-export const useAuthStore = create((set) => ({
+export const useAuthStore = create((set, get) => ({
 	user: null,
 	isAuthenticated: false,
 	error: null,
@@ -41,7 +41,48 @@ export const useAuthStore = create((set) => ({
 	isCheckingAuth: true,
 	message: null,
 
-	signup: async (email, password, name) => {
+	// Role-based routing helper
+	getRoleBasedRoute: () => {
+		const { user } = get();
+		if (!user || !user.role) return '/dashboard';
+
+		switch (user.role) {
+			case 'admin':
+				return '/dashboard/admin';
+			case 'operator':
+				return '/dashboard/operator';
+			case 'responder':
+				return '/dashboard/responder';
+			default:
+				return '/dashboard';
+		}
+	},
+
+	// Check if user has required role
+	hasRole: (requiredRole) => {
+		const { user } = get();
+		if (!user || !user.role) return false;
+
+		// Admin has access to all roles
+		if (user.role === 'admin') return true;
+
+		// Check specific role
+		return user.role === requiredRole;
+	},
+
+	// Check if user has any of the required roles
+	hasAnyRole: (requiredRoles) => {
+		const { user } = get();
+		if (!user || !user.role) return false;
+
+		// Admin has access to all roles
+		if (user.role === 'admin') return true;
+
+		// Check if user role is in required roles
+		return requiredRoles.includes(user.role);
+	},
+
+	signup: async (email, password, name, role = 'operator') => {
 		set({ isLoading: true, error: null });
 
 		try {
@@ -61,10 +102,17 @@ export const useAuthStore = create((set) => ({
 				throw new Error(nameValidation.message);
 			}
 
+			// Validate role
+			const validRoles = ['admin', 'operator', 'responder'];
+			if (!validRoles.includes(role)) {
+				throw new Error('Invalid role selected');
+			}
+
 			const response = await axios.post(`${API_URL}/signup`, {
 				email: email.trim().toLowerCase(),
 				password,
-				name: nameValidation.sanitizedValue
+				name: nameValidation.sanitizedValue,
+				role
 			});
 
 			set({
@@ -291,6 +339,47 @@ export const useAuthStore = create((set) => ({
 
 			handleSuccess("Profile updated successfully!");
 			return { user: profileData };
+		} catch (error) {
+			const errorMessage = handleError(error);
+			set({ error: errorMessage, isLoading: false });
+			throw error;
+		}
+	},
+
+	// Fetch dashboard data based on user role
+	fetchDashboardData: async () => {
+		const { user } = get();
+		if (!user || !user.role) {
+			throw new Error("User not authenticated or role not found");
+		}
+
+		set({ isLoading: true, error: null });
+
+		try {
+			const dashboardAPI = import.meta.env.VITE_API_URL
+				? `${import.meta.env.VITE_API_URL}/dashboard`
+				: import.meta.env.MODE === "development"
+					? "http://localhost:5000/api/dashboard"
+					: "/api/dashboard";
+
+			let endpoint;
+			switch (user.role) {
+				case 'admin':
+					endpoint = `${dashboardAPI}/admin`;
+					break;
+				case 'operator':
+					endpoint = `${dashboardAPI}/operator`;
+					break;
+				case 'responder':
+					endpoint = `${dashboardAPI}/responder`;
+					break;
+				default:
+					throw new Error("Invalid user role");
+			}
+
+			const response = await axios.get(endpoint);
+			set({ isLoading: false, error: null });
+			return response.data;
 		} catch (error) {
 			const errorMessage = handleError(error);
 			set({ error: errorMessage, isLoading: false });

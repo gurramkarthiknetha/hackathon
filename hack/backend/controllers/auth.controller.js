@@ -26,7 +26,7 @@ import {
 } from "../utils/errorHandler.js";
 
 export const signup = asyncHandler(async (req, res) => {
-	const { email, password, name } = req.body;
+	const { email, password, name, role = 'operator' } = req.body;
 
 	// Validate input
 	const emailValidation = validateEmail(email);
@@ -42,6 +42,12 @@ export const signup = asyncHandler(async (req, res) => {
 	const nameValidation = validateName(name);
 	if (!nameValidation.isValid) {
 		throw new ValidationError(nameValidation.message);
+	}
+
+	// Validate role
+	const validRoles = ['admin', 'operator', 'responder'];
+	if (!validRoles.includes(role)) {
+		throw new ValidationError('Invalid role selected');
 	}
 
 	// Sanitize inputs
@@ -69,6 +75,7 @@ export const signup = asyncHandler(async (req, res) => {
 			isReRegistration = true;
 			existingUser.password = hashedPassword;
 			existingUser.name = sanitizedName;
+			existingUser.role = role;
 			existingUser.verificationToken = verificationToken;
 			existingUser.verificationTokenExpiresAt = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
 			existingUser.createdAt = new Date(); // Update creation time for re-registration
@@ -82,6 +89,7 @@ export const signup = asyncHandler(async (req, res) => {
 			email: sanitizedEmail,
 			password: hashedPassword,
 			name: sanitizedName,
+			role,
 			verificationToken,
 			verificationTokenExpiresAt: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
 		});
@@ -90,7 +98,7 @@ export const signup = asyncHandler(async (req, res) => {
 	}
 
 	// Generate JWT and set cookie
-	generateTokenAndSetCookie(res, user._id);
+	generateTokenAndSetCookie(res, user._id, user.role);
 
 	// Send verification email
 	try {
@@ -114,6 +122,7 @@ export const signup = asyncHandler(async (req, res) => {
 			id: user._id,
 			email: user.email,
 			name: user.name,
+			role: user.role,
 			isVerified: user.isVerified,
 			createdAt: user.createdAt,
 		},
@@ -160,6 +169,7 @@ export const verifyEmail = asyncHandler(async (req, res) => {
 			id: user._id,
 			email: user.email,
 			name: user.name,
+			role: user.role,
 			isVerified: user.isVerified,
 			createdAt: user.createdAt,
 		},
@@ -195,7 +205,7 @@ export const login = asyncHandler(async (req, res) => {
 	}
 
 	// Generate JWT and set cookie
-	generateTokenAndSetCookie(res, user._id);
+	generateTokenAndSetCookie(res, user._id, user.role);
 
 	// Update last login
 	user.lastLogin = new Date();
@@ -208,6 +218,7 @@ export const login = asyncHandler(async (req, res) => {
 			id: user._id,
 			email: user.email,
 			name: user.name,
+			role: user.role,
 			isVerified: user.isVerified,
 			lastLogin: user.lastLogin,
 			createdAt: user.createdAt,
@@ -381,6 +392,7 @@ export const checkAuth = asyncHandler(async (req, res) => {
 			id: user._id,
 			email: user.email,
 			name: user.name,
+			role: user.role,
 			isVerified: user.isVerified,
 			lastLogin: user.lastLogin,
 			createdAt: user.createdAt,
