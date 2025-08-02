@@ -25,6 +25,7 @@ import emailNotificationSettingsRoutes from "./routes/emailNotificationSettings.
 import notificationRoutes from "./routes/notification.route.js";
 import messageRoutes from "./routes/message.route.js";
 import videoRoutes from "./routes/video.route.js";
+import videoDetectionRoutes from "./routes/videoDetection.route.js";
 
 // Import models for WebSocket handlers
 import { Message } from "./models/message.model.js";
@@ -81,6 +82,7 @@ app.use("/api/email-settings", emailNotificationSettingsRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/video", videoRoutes);
+app.use("/api/video-detection", videoDetectionRoutes);
 
 // Global error handler (must be after all routes)
 app.use(globalErrorHandler);
