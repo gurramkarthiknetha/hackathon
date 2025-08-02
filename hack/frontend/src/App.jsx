@@ -42,9 +42,13 @@ import NotificationManagementPage from "./pages/admin/NotificationManagementPage
 // Test pages
 import MapTestPage from "./pages/MapTestPage";
 import NotificationTestPage from "./pages/NotificationTestPage";
+import IPWebcamTest from "./pages/test/IPWebcamTest";
 import { Toaster } from "react-hot-toast";
 import { useAuthStore } from "./store/authStore";
 import { useEffect } from "react";
+
+// Import test utilities for development
+import "./utils/testActivityDetection.js";
 import RoleProtectedRoute from "./components/auth/RoleProtectedRoute";
 import NotificationModalProvider from "./components/notifications/NotificationModalProvider";
 import ModalTestButton from "./components/debug/ModalTestButton";
@@ -331,6 +335,7 @@ function App() {
 				{/* Test routes */}
 				<Route path='/map-test' element={<MapTestPage />} />
 				<Route path='/notification-test' element={<NotificationTestPage />} />
+				<Route path='/ipwebcam-test' element={<IPWebcamTest />} />
 
 				{/* catch all routes */}
 				<Route path='*' element={<Navigate to='/dashboard' replace />} />

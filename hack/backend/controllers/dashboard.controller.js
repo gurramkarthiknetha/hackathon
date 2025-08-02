@@ -127,7 +127,7 @@ export const getResponderDashboard = asyncHandler(async (req, res) => {
  */
 export const getUserProfile = asyncHandler(async (req, res) => {
 	const user = await User.findById(req.userId).select('-password -resetPasswordToken -verificationToken');
-	
+
 	if (!user) {
 		return res.status(404).json({
 			success: false,
@@ -142,5 +142,21 @@ export const getUserProfile = asyncHandler(async (req, res) => {
 			user,
 			userRole: req.userRole
 		}
+	});
+});
+
+/**
+ * Get Responders List - For team communication
+ */
+export const getResponders = asyncHandler(async (req, res) => {
+	const responders = await User.find({
+		role: 'responder',
+		isActive: true
+	}).select('name role assignedZone lastLogin isActive');
+
+	res.status(200).json({
+		success: true,
+		message: "Responders retrieved successfully",
+		data: responders
 	});
 });

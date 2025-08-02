@@ -3,7 +3,8 @@ import {
 	getAdminDashboard,
 	getOperatorDashboard,
 	getResponderDashboard,
-	getUserProfile
+	getUserProfile,
+	getResponders
 } from "../controllers/dashboard.controller.js";
 import { verifyToken } from "../middleware/verifyToken.js";
 import { rolePermissions } from "../middleware/roleAuth.js";
@@ -20,5 +21,8 @@ router.get("/responder", rolePermissions.adminOrResponder, getResponderDashboard
 
 // General user profile endpoint (accessible to all authenticated users)
 router.get("/profile", getUserProfile);
+
+// Get responders list for team communication
+router.get("/responders", getResponders);
 
 export default router;

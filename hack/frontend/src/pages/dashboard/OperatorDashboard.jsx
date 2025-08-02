@@ -26,6 +26,7 @@ import RealTimeAlerts from "../../components/monitoring/RealTimeAlerts";
 import InteractiveZoneMap from "../../components/monitoring/InteractiveZoneMap";
 import CommandCenter from "../../components/monitoring/CommandCenter";
 import IncidentTimeline from "../../components/monitoring/IncidentTimeline";
+import ActivityTestPanel from "../../components/test/ActivityTestPanel";
 
 const OperatorDashboard = () => {
 	const { user } = useAuthStore();
@@ -240,6 +241,9 @@ const OperatorDashboard = () => {
 					onIncidentSelect={handleIncidentSelect}
 				/>
 			</motion.div>
+
+			{/* Activity Detection Test Panel (Development Only) */}
+			{process.env.NODE_ENV === 'development' && <ActivityTestPanel />}
 		</div>
 	);
 };

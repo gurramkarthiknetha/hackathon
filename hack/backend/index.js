@@ -23,6 +23,7 @@ import mapsRoutes from "./routes/maps.route.js";
 import emailNotificationSettingsRoutes from "./routes/emailNotificationSettings.route.js";
 import notificationRoutes from "./routes/notification.route.js";
 import messageRoutes from "./routes/message.route.js";
+import videoRoutes from "./routes/video.route.js";
 
 // Import models for WebSocket handlers
 import { Message } from "./models/message.model.js";
@@ -57,8 +58,14 @@ const corsOptions = {
 		: ["http://localhost:5173", "http://10.100.14.125:5173/", "https://aieventmonitor.vercel.app"],
 	credentials: true,
 	optionsSuccessStatus: 200,
+	methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+	allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+	preflightContinue: false
 };
 app.use(cors(corsOptions));
+
+// Handle preflight requests explicitly
+app.options('*', cors(corsOptions));
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' })); // Limit request size
@@ -72,6 +79,7 @@ app.use("/api/maps", mapsRoutes);
 app.use("/api/email-settings", emailNotificationSettingsRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/messages", messageRoutes);
+app.use("/api/video", videoRoutes);
 
 // Global error handler (must be after all routes)
 app.use(globalErrorHandler);

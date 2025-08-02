@@ -4,13 +4,19 @@ import helmet from "helmet";
 // General rate limiting
 export const generalLimiter = rateLimit({
 	windowMs: 15 * 60 * 1000, // 15 minutes
-	max: 100, // Limit each IP to 100 requests per windowMs
+	max: 1000, // Increased limit for video service requests
 	message: {
 		success: false,
 		message: "Too many requests from this IP, please try again later.",
 	},
 	standardHeaders: true,
 	legacyHeaders: false,
+	skip: (req) => {
+		// Skip rate limiting for video service internal requests
+		return req.headers['user-agent']?.includes('python-requests') ||
+		       req.url.includes('/api/video/') ||
+		       req.url.includes('/socket.io/');
+	}
 });
 
 // Strict rate limiting for auth endpoints
@@ -48,6 +54,22 @@ export const emailVerificationLimiter = rateLimit({
 	},
 	standardHeaders: true,
 	legacyHeaders: false,
+});
+
+// Incident creation rate limiting (more lenient for video service)
+export const incidentLimiter = rateLimit({
+	windowMs: 1 * 60 * 1000, // 1 minute
+	max: 100, // Allow up to 100 incident creations per minute
+	message: {
+		success: false,
+		message: "Too many incident creation attempts, please try again later.",
+	},
+	standardHeaders: true,
+	legacyHeaders: false,
+	skip: (req) => {
+		// Skip rate limiting for video service requests
+		return req.headers['user-agent']?.includes('python-requests');
+	}
 });
 
 // Helmet configuration for security headers

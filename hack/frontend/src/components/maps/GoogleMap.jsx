@@ -61,6 +61,19 @@ const GoogleMap = ({
   const updateUserLocationMarker = () => {
     if (!mapInstanceRef.current || !showUserLocation || !userLocation) return;
 
+    // Validate user location coordinates
+    const lat = typeof userLocation.lat === 'number' ? userLocation.lat : null;
+    const lng = typeof userLocation.lng === 'number' ? userLocation.lng : null;
+
+    if (lat === null || lng === null ||
+        !isFinite(lat) || !isFinite(lng) ||
+        isNaN(lat) || isNaN(lng) ||
+        lat < -90 || lat > 90 ||
+        lng < -180 || lng > 180) {
+      console.warn('Invalid user location coordinates:', userLocation);
+      return;
+    }
+
     // Remove existing user location marker
     if (userLocationMarkerRef.current) {
       if (userLocationMarkerRef.current.setMap) {
@@ -73,7 +86,7 @@ const GoogleMap = ({
 
     // Create user location marker with a distinctive style
     const userMarker = new window.google.maps.Marker({
-      position: { lat: userLocation.lat, lng: userLocation.lng },
+      position: { lat, lng },
       map: mapInstanceRef.current,
       title: userLocation.isFallback ? 'Your Location (Approximate)' : 'Your Current Location',
       icon: {
@@ -132,6 +145,7 @@ const GoogleMap = ({
     const defaultCenter = { lat: 40.7128, lng: -74.0060 }; // NYC default
 
     if (!centerCoords || typeof centerCoords !== 'object') {
+      console.warn('Invalid center coordinates provided, using default:', centerCoords);
       return defaultCenter;
     }
 
@@ -140,9 +154,15 @@ const GoogleMap = ({
     const lng = typeof centerCoords.lng === 'number' ? centerCoords.lng :
                 typeof centerCoords.longitude === 'number' ? centerCoords.longitude : null;
 
-    if (lat !== null && lng !== null && isFinite(lat) && isFinite(lng)) {
+    // More strict validation for lat/lng values
+    if (lat !== null && lng !== null &&
+        isFinite(lat) && isFinite(lng) &&
+        !isNaN(lat) && !isNaN(lng) &&
+        lat >= -90 && lat <= 90 &&
+        lng >= -180 && lng <= 180) {
       return { lat, lng };
     } else {
+      console.warn('Invalid lat/lng values, using default:', { lat, lng });
       return defaultCenter;
     }
   };
@@ -189,6 +209,23 @@ const GoogleMap = ({
     }
   };
 
+  // Validate marker coordinates
+  const validateMarkerPosition = (markerData) => {
+    const lat = typeof markerData.lat === 'number' ? markerData.lat :
+                typeof markerData.latitude === 'number' ? markerData.latitude : null;
+    const lng = typeof markerData.lng === 'number' ? markerData.lng :
+                typeof markerData.longitude === 'number' ? markerData.longitude : null;
+
+    if (lat !== null && lng !== null &&
+        isFinite(lat) && isFinite(lng) &&
+        !isNaN(lat) && !isNaN(lng) &&
+        lat >= -90 && lat <= 90 &&
+        lng >= -180 && lng <= 180) {
+      return { lat, lng };
+    }
+    return null;
+  };
+
   // Update markers when markers prop changes
   useEffect(() => {
     if (!mapInstanceRef.current || !window.google) return;
@@ -205,6 +242,13 @@ const GoogleMap = ({
 
     // Add new markers
     markers.forEach((markerData, index) => {
+      // Validate marker position first
+      const position = validateMarkerPosition(markerData);
+      if (!position) {
+        console.warn(`Invalid marker position for marker ${index}:`, markerData);
+        return; // Skip this marker
+      }
+
       let marker;
 
       // Use AdvancedMarkerElement if available, fallback to Marker
@@ -226,7 +270,7 @@ const GoogleMap = ({
         }
 
         marker = new window.google.maps.marker.AdvancedMarkerElement({
-          position: { lat: markerData.lat, lng: markerData.lng },
+          position,
           map: mapInstanceRef.current,
           title: markerData.title || '',
           content: markerContent
@@ -234,7 +278,7 @@ const GoogleMap = ({
       } else {
         // Fallback to deprecated Marker for compatibility
         marker = new window.google.maps.Marker({
-          position: { lat: markerData.lat, lng: markerData.lng },
+          position,
           map: mapInstanceRef.current,
           title: markerData.title || '',
           icon: markerData.icon || undefined,
@@ -286,7 +330,16 @@ const GoogleMap = ({
   // Center map on user location if requested
   useEffect(() => {
     if (mapInstanceRef.current && centerOnUserLocation && userLocation && !userLocation.loading) {
-      mapInstanceRef.current.setCenter({ lat: userLocation.lat, lng: userLocation.lng });
+      const lat = typeof userLocation.lat === 'number' ? userLocation.lat : null;
+      const lng = typeof userLocation.lng === 'number' ? userLocation.lng : null;
+
+      if (lat !== null && lng !== null &&
+          isFinite(lat) && isFinite(lng) &&
+          !isNaN(lat) && !isNaN(lng) &&
+          lat >= -90 && lat <= 90 &&
+          lng >= -180 && lng <= 180) {
+        mapInstanceRef.current.setCenter({ lat, lng });
+      }
     }
   }, [centerOnUserLocation, userLocation]);
 
