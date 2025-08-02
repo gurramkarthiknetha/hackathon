@@ -3,7 +3,7 @@ import { useSidebar } from "../../components/layout/DashboardLayout";
 import LiveVideoFeed from "../../components/monitoring/LiveVideoFeed";
 import CameraManager from "../../components/monitoring/CameraManager";
 import { useState } from "react";
-import { Camera, Eye, Settings, Maximize2, Volume2, VolumeX } from "lucide-react";
+import { Camera, Eye, Settings, Maximize2, Volume2, VolumeX, Target, AlertTriangle, Activity } from "lucide-react";
 
 const LiveVideoFeedPage = () => {
   const { sidebarOpen } = useSidebar();
@@ -11,6 +11,36 @@ const LiveVideoFeedPage = () => {
   const [fullscreen, setFullscreen] = useState(false);
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [selectedCamera, setSelectedCamera] = useState("cam_east_01");
+
+  // Mock data for maximum accuracy levels - replace with real data from your backend
+  const maxAccuracyLevels = {
+    person: 0.94,
+    stampede: 0.00,
+    medicalEmergency: 0.20,
+    fire: 0.00,
+    smoke: 0.20,
+    running: 0.30,
+    fallen: 0.00,
+    ke: 1.00, // Additional detection category
+    violence: 0.85,
+    crowdDensity: 0.78,
+    weapon: 0.92,
+    suspiciousActivity: 0.67
+  };
+
+  const getAccuracyColor = (accuracy) => {
+    if (accuracy >= 0.8) return "text-green-400";
+    if (accuracy >= 0.6) return "text-yellow-400";
+    if (accuracy >= 0.4) return "text-orange-400";
+    return "text-red-400";
+  };
+
+  const getAccuracyBarColor = (accuracy) => {
+    if (accuracy >= 0.8) return "bg-green-500";
+    if (accuracy >= 0.6) return "bg-yellow-500";
+    if (accuracy >= 0.4) return "bg-orange-500";
+    return "bg-red-500";
+  };
 
   return (
     <div className={`space-y-6 ${sidebarOpen ? 'p-4 lg:p-6' : 'p-4 lg:p-8 xl:px-12'}`}>
@@ -110,26 +140,108 @@ const LiveVideoFeedPage = () => {
         </div>
       </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Camera List */}
+      {/* Maximum Accuracy Levels Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15 }}
+        className="bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-lg rounded-xl border border-gray-800 p-6"
+      >
+        <div className="flex items-center space-x-3 mb-6">
+          <div className="p-2 bg-blue-600 rounded-lg">
+            <Target className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-white">Maximum Accuracy Levels</h2>
+            <p className="text-gray-400 text-sm">Real-time detection confidence scores</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+          {Object.entries(maxAccuracyLevels).map(([key, accuracy]) => (
+            <div key={key} className="bg-gray-800 bg-opacity-50 rounded-lg p-4 border border-gray-700">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-gray-300 capitalize">
+                  {key.replace(/([A-Z])/g, ' $1').trim()}
+                </span>
+                <span className={`text-sm font-bold ${getAccuracyColor(accuracy)}`}>
+                  {(accuracy * 100).toFixed(0)}%
+                </span>
+              </div>
+              <div className="w-full bg-gray-700 rounded-full h-2">
+                <div 
+                  className={`h-2 rounded-full transition-all duration-300 ${getAccuracyBarColor(accuracy)}`}
+                  style={{ width: `${accuracy * 100}%` }}
+                ></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </motion.div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Maximum Accuracy Levels - Left Side */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
-          className="lg:col-span-1"
+          className="lg:col-span-2"
         >
-          <CameraManager
-            onCameraSelect={setSelectedCamera}
-            selectedCamera={selectedCamera}
-          />
+          <div className="bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-lg rounded-xl border border-gray-800 p-4">
+            <div className="flex items-center space-x-2 mb-4">
+              <div className="p-1.5 bg-blue-600 rounded-lg">
+                <Target className="h-4 w-4 text-white" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-white">Accuracy Levels</h2>
+                <p className="text-gray-400 text-xs">Detection scores</p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {Object.entries(maxAccuracyLevels).map(([key, accuracy]) => (
+                <div key={key} className="bg-gray-800 bg-opacity-50 rounded-lg p-2 border border-gray-700">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-medium text-gray-300 capitalize truncate">
+                      {key.replace(/([A-Z])/g, ' $1').trim()}
+                    </span>
+                    <span className={`text-xs font-bold ${getAccuracyColor(accuracy)}`}>
+                      {(accuracy * 100).toFixed(0)}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-700 rounded-full h-1.5">
+                    <div 
+                      className={`h-1.5 rounded-full transition-all duration-300 ${getAccuracyBarColor(accuracy)}`}
+                      style={{ width: `${accuracy * 100}%` }}
+                    ></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </motion.div>
 
-        {/* Main Video Feed */}
+        {/* Camera List - Center */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="lg:col-span-4"
+        >
+          <div className="bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-lg rounded-xl border border-gray-800 h-full">
+            <CameraManager
+              onCameraSelect={setSelectedCamera}
+              selectedCamera={selectedCamera}
+            />
+          </div>
+        </motion.div>
+
+        {/* Main Video Feed - Right */}
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.3 }}
-          className="lg:col-span-3"
+          transition={{ delay: 0.4 }}
+          className="lg:col-span-6"
         >
           <div className="bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-lg rounded-xl border border-gray-800 h-[600px]">
             <LiveVideoFeed selectedIncident={selectedIncident} currentCamera={selectedCamera} />
@@ -137,78 +249,6 @@ const LiveVideoFeedPage = () => {
         </motion.div>
       </div>
 
-      {/* Camera Controls */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        className="bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-lg rounded-xl p-6 border border-gray-800"
-      >
-        <h3 className="text-lg font-semibold text-white mb-4">Camera Controls</h3>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Zoom Level</label>
-            <input
-              type="range"
-              min="1"
-              max="10"
-              defaultValue="1"
-              className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Brightness</label>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              defaultValue="50"
-              className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Contrast</label>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              defaultValue="50"
-              className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
-            />
-          </div>
-        </div>
-        
-        <div className="flex items-center justify-between mt-6">
-          <div className="flex items-center space-x-4">
-            <label className="flex items-center space-x-2">
-              <input type="checkbox" defaultChecked className="rounded bg-gray-700 border-gray-600" />
-              <span className="text-gray-300 text-sm">AI Detection Overlay</span>
-            </label>
-            
-            <label className="flex items-center space-x-2">
-              <input type="checkbox" defaultChecked className="rounded bg-gray-700 border-gray-600" />
-              <span className="text-gray-300 text-sm">Motion Detection</span>
-            </label>
-            
-            <label className="flex items-center space-x-2">
-              <input type="checkbox" className="rounded bg-gray-700 border-gray-600" />
-              <span className="text-gray-300 text-sm">Night Vision</span>
-            </label>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <button className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors duration-200">
-              Record
-            </button>
-            <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200">
-              Snapshot
-            </button>
-          </div>
-        </div>
-      </motion.div>
     </div>
   );
 };

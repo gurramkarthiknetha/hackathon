@@ -9,6 +9,8 @@ const LiveVideoFeed = ({ selectedIncident, currentCamera: propCurrentCamera }) =
   const [isStartingCamera, setIsStartingCamera] = useState(false);
   const [isUsingDeviceCamera, setIsUsingDeviceCamera] = useState(false);
   const [stream, setStream] = useState(null);
+  const [detectionResults, setDetectionResults] = useState(null);
+  const [aiStatus, setAiStatus] = useState('idle');
   const videoRef = useRef(null);
 
   // Video streaming service URLs
@@ -84,6 +86,25 @@ const LiveVideoFeed = ({ selectedIncident, currentCamera: propCurrentCamera }) =
     }
   };
 
+  // Fetch detection results from AI service
+  const fetchDetectionResults = async (cameraId) => {
+    if (cameraId === 'iphone_camera') return;
+    
+    try {
+      const response = await fetch(`${VIDEO_SERVICE_URL}/api/cameras/${cameraId}/detections`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data) {
+          setDetectionResults(data.data);
+          setAiStatus('active');
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching detection results:', error);
+      setAiStatus('error');
+    }
+  };
+
   // Update current camera when prop changes
   useEffect(() => {
     if (propCurrentCamera) {
@@ -135,6 +156,17 @@ const LiveVideoFeed = ({ selectedIncident, currentCamera: propCurrentCamera }) =
 
     fetchCameras();
   }, [API_URL]);
+
+  // Fetch detection results periodically for active cameras
+  useEffect(() => {
+    if (currentCamera && currentCamera !== 'iphone_camera') {
+      const interval = setInterval(() => {
+        fetchDetectionResults(currentCamera);
+      }, 2000); // Update every 2 seconds
+
+      return () => clearInterval(interval);
+    }
+  }, [currentCamera]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -200,6 +232,69 @@ const LiveVideoFeed = ({ selectedIncident, currentCamera: propCurrentCamera }) =
 
   const currentCameraInfo = cameras.find(cam => cam.id === currentCamera);
 
+  // AI Detection Status Component
+  const AIDetectionStatus = () => {
+    if (currentCamera === 'iphone_camera') {
+      return (
+        <div className="absolute top-4 left-4 bg-blue-500/20 px-3 py-2 rounded">
+          <span className="text-blue-400 text-sm font-medium">DEVICE CAMERA - AI Ready</span>
+        </div>
+      );
+    }
+
+    if (!detectionResults) {
+      return (
+        <div className="absolute top-4 left-4 bg-gray-500/20 px-3 py-2 rounded">
+          <span className="text-gray-400 text-sm font-medium">AI: {aiStatus}</span>
+        </div>
+      );
+    }
+
+    const hasDetections = detectionResults.detections && 
+      Object.values(detectionResults.detections).some(detection => detection.detected);
+
+    return (
+      <div className="absolute top-4 left-4 bg-green-500/20 px-3 py-2 rounded">
+        <span className="text-green-400 text-sm font-medium">
+          AI ACTIVE - {hasDetections ? 'DETECTIONS' : 'CLEAR'}
+        </span>
+      </div>
+    );
+  };
+
+  // AI Detection Results Component
+  const AIDetectionResults = () => {
+    if (!detectionResults || currentCamera === 'iphone_camera') return null;
+
+    const detections = detectionResults.detections || {};
+    const activeDetections = Object.entries(detections).filter(([_, detection]) => detection.detected);
+
+    if (activeDetections.length === 0) return null;
+
+    return (
+      <div className="absolute bottom-4 left-4 bg-red-600/90 px-4 py-3 rounded-lg max-w-sm">
+        <h4 className="text-white font-bold mb-2">🚨 AI DETECTIONS</h4>
+        <div className="space-y-1">
+          {activeDetections.map(([eventType, detection]) => (
+            <div key={eventType} className="flex justify-between items-center">
+              <span className="text-white text-sm capitalize">{eventType}</span>
+              <span className="text-yellow-300 text-sm font-bold">
+                {(detection.confidence * 100).toFixed(1)}%
+              </span>
+            </div>
+          ))}
+        </div>
+        {detectionResults.person_count > 0 && (
+          <div className="mt-2 pt-2 border-t border-red-400">
+            <span className="text-white text-sm">
+              👥 {detectionResults.person_count} people detected
+            </span>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="h-full flex flex-col bg-gray-900">
       <div className="p-4 border-b border-gray-700">
@@ -248,7 +343,7 @@ const LiveVideoFeed = ({ selectedIncident, currentCamera: propCurrentCamera }) =
         </div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center relative">
         {videoError ? (
           <div className="text-center">
             <h3 className="text-lg font-semibold text-red-400 mb-2">Error</h3>
@@ -272,26 +367,8 @@ const LiveVideoFeed = ({ selectedIncident, currentCamera: propCurrentCamera }) =
               onError={() => setVideoError('Failed to load iPhone camera stream')}
             />
 
-            {/* iPhone Camera Controls */}
-            <div className="absolute top-4 right-4 flex space-x-2">
-              <button
-                onClick={switchCamera}
-                className="px-3 py-2 bg-blue-600/80 hover:bg-blue-700/80 text-white rounded-lg text-sm transition-colors"
-              >
-                Switch Camera
-              </button>
-              <button
-                onClick={stopDeviceCamera}
-                className="px-3 py-2 bg-red-600/80 hover:bg-red-700/80 text-white rounded-lg text-sm transition-colors"
-              >
-                Stop
-              </button>
-            </div>
-
-            {/* iPhone Camera Status Indicator */}
-            <div className="absolute top-4 left-4 bg-green-500/20 px-2 py-1 rounded">
-              <span className="text-green-400 text-xs font-medium">IPHONE CAMERA LIVE</span>
-            </div>
+            {/* AI Status for iPhone Camera */}
+            <AIDetectionStatus />
           </div>
         ) : currentCameraInfo?.status === 'active' && currentCamera !== 'iphone_camera' ? (
           <div className="w-full h-full relative">
@@ -302,6 +379,12 @@ const LiveVideoFeed = ({ selectedIncident, currentCamera: propCurrentCamera }) =
               onError={() => setVideoError('Failed to load video stream')}
               onLoad={() => setVideoError(null)}
             />
+
+            {/* AI Detection Status */}
+            <AIDetectionStatus />
+
+            {/* AI Detection Results */}
+            <AIDetectionResults />
           </div>
         ) : (
           <div className="text-center">
