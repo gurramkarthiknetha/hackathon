@@ -52,6 +52,11 @@ import "./utils/testActivityDetection.js";
 import RoleProtectedRoute from "./components/auth/RoleProtectedRoute";
 import NotificationModalProvider from "./components/notifications/NotificationModalProvider";
 import ModalTestButton from "./components/debug/ModalTestButton";
+import AlertTestButton from "./components/debug/AlertTestButton";
+
+// Emergency Alert System
+import EmergencyAlertModal from "./components/alerts/EmergencyAlertModal";
+import useEmergencyAlerts from "./hooks/useEmergencyAlerts";
 
 // protect routes that require authentication
 const ProtectedRoute = ({ children }) => {
@@ -88,7 +93,10 @@ const RoleBasedRedirect = () => {
 };
 
 function App() {
-	const { isCheckingAuth, checkAuth } = useAuthStore();
+	const { isCheckingAuth, checkAuth, isAuthenticated } = useAuthStore();
+
+	// Emergency alert system (only for authenticated users)
+	const emergencyAlerts = useEmergencyAlerts();
 
 	useEffect(() => {
 		checkAuth();
@@ -343,6 +351,17 @@ function App() {
 			<Toaster />
 			<NotificationModalProvider />
 			<ModalTestButton />
+			<AlertTestButton />
+
+			{/* Emergency Alert Modal - Only show for authenticated users */}
+			{isAuthenticated && (
+				<EmergencyAlertModal
+					alert={emergencyAlerts.currentAlert}
+					isOpen={emergencyAlerts.isAlertModalOpen}
+					onClose={emergencyAlerts.closeAlert}
+					onAcknowledge={emergencyAlerts.acknowledgeAlert}
+				/>
+			)}
 		</div>
 	);
 }

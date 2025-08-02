@@ -15,6 +15,7 @@ import {
 	sanitizeRequest,
 	requestLogger
 } from "./middleware/security.js";
+import AlertService from "./services/alertService.js";
 
 import authRoutes from "./routes/auth.route.js";
 import dashboardRoutes from "./routes/dashboard.route.js";
@@ -315,11 +316,28 @@ io.on('connection', (socket) => {
 	});
 });
 
-// Make io available to routes
+// Initialize Alert Service
+const alertService = new AlertService(io);
+
+// Make io and alertService available to routes
 app.set('io', io);
+app.set('alertService', alertService);
+
+// Add detection alert endpoint for AI model integration
+app.post('/api/detection-alert', express.json(), async (req, res) => {
+	try {
+		console.log('Received detection alert:', req.body);
+		await alertService.processDetectionAlert(req.body);
+		res.status(200).json({ success: true, message: 'Alert processed successfully' });
+	} catch (error) {
+		console.error('Error processing detection alert:', error);
+		res.status(500).json({ success: false, message: 'Failed to process alert' });
+	}
+});
 
 server.listen(PORT, async () => {
 	await connectDB();
 	await verifyTransporter();
 	console.log("Server is running on port: ", PORT);
+	console.log("Alert service initialized and ready to process detection alerts");
 });
