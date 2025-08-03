@@ -8,6 +8,8 @@ import {
   getCameraDetections,
   configureDroidCam,
   configureIPWebcam,
+  configureCamoStudio,
+  detectCameraDevices,
   getDetectionHistory,
   getCameraStatus
 } from "../controllers/video.controller.js";
@@ -32,5 +34,11 @@ router.post("/cameras/droidcam/configure", rolePermissions.adminOrOperator, conf
 
 // IP Webcam configuration
 router.post("/cameras/ipwebcam/configure", rolePermissions.adminOrOperator, configureIPWebcam);
+
+// Camo Studio configuration
+router.post("/cameras/camo-studio/configure", rolePermissions.adminOrOperator, configureCamoStudio);
+
+// Device detection
+router.post("/cameras/detect-devices", rolePermissions.adminOrOperator, detectCameraDevices);
 
 export default router;

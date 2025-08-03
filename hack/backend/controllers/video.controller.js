@@ -183,6 +183,56 @@ export const configureIPWebcam = async (req, res) => {
   }
 };
 
+// Configure Camo Studio
+export const configureCamoStudio = async (req, res) => {
+  try {
+    const { device_index, camera_id, camera_name } = req.body;
+    const userId = req.userId;
+
+    console.log(`User ${userId} configuring Camo Studio with device index ${device_index}`);
+
+    const response = await axios.post(`${VIDEO_SERVICE_URL}/api/cameras/camo-studio/configure`, {
+      device_index: device_index || 3,
+      camera_id: camera_id || 'camo_studio_01',
+      camera_name
+    });
+
+    res.status(200).json({
+      success: response.data.success,
+      message: response.data.message
+    });
+  } catch (error) {
+    console.error("Error configuring Camo Studio:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to configure Camo Studio"
+    });
+  }
+};
+
+// Detect available camera devices
+export const detectCameraDevices = async (req, res) => {
+  try {
+    const userId = req.userId;
+    console.log(`User ${userId} detecting camera devices`);
+
+    const response = await axios.post(`${VIDEO_SERVICE_URL}/api/cameras/detect-devices`);
+
+    res.status(200).json({
+      success: response.data.success,
+      devices: response.data.devices,
+      message: response.data.message
+    });
+  } catch (error) {
+    console.error("Error detecting camera devices:", error);
+    res.status(500).json({
+      success: false,
+      devices: [],
+      message: "Failed to detect camera devices"
+    });
+  }
+};
+
 // Get detection history
 export const getDetectionHistory = async (req, res) => {
   try {

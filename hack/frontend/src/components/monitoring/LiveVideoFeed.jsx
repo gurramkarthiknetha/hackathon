@@ -15,7 +15,7 @@ const LiveVideoFeed = ({ selectedIncident, currentCamera: propCurrentCamera }) =
 
   // Video streaming service URLs
   const VIDEO_SERVICE_URL = import.meta.env.VITE_VIDEO_SERVICE_URL || 'http://localhost:5001';
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
   // iPhone camera functions
   const startDeviceCamera = async () => {
@@ -117,7 +117,7 @@ const LiveVideoFeed = ({ selectedIncident, currentCamera: propCurrentCamera }) =
     const fetchCameras = async () => {
       try {
         console.log('Fetching cameras...');
-        const response = await fetch(`${API_URL}/video/cameras`, {
+        const response = await fetch(`${API_URL}/cameras`, {
           credentials: 'include'
         });
         const data = await response.json();
@@ -188,7 +188,7 @@ const LiveVideoFeed = ({ selectedIncident, currentCamera: propCurrentCamera }) =
       }
 
       // Handle remote cameras
-      const response = await fetch(`${API_URL}/video/cameras/${cameraId}/start`, {
+      const response = await fetch(`${API_URL}/cameras/${cameraId}/start`, {
         method: 'POST',
         credentials: 'include'
       });
@@ -203,7 +203,7 @@ const LiveVideoFeed = ({ selectedIncident, currentCamera: propCurrentCamera }) =
         }
 
         // Refresh cameras list to get updated status
-        const camerasResponse = await fetch(`${API_URL}/video/cameras`, {
+        const camerasResponse = await fetch(`${API_URL}/cameras`, {
           credentials: 'include'
         });
         const camerasData = await camerasResponse.json();

@@ -16,15 +16,18 @@ const CameraManager = ({ onCameraSelect, selectedCamera }) => {
   const [cameras, setCameras] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showAddCamera, setShowAddCamera] = useState(false);
-  const [cameraType, setCameraType] = useState("droidcam"); // "droidcam" or "ipwebcam"
+  const [cameraType, setCameraType] = useState("droidcam"); // "droidcam", "ipwebcam", or "camo-studio"
   const [isConfiguring, setIsConfiguring] = useState(false);
   const [newCameraConfig, setNewCameraConfig] = useState({
     name: "",
     ip_address: "",
     webcam_url: "",
+    device_index: "3",
     zone: "",
     location: ""
   });
+  const [availableDevices, setAvailableDevices] = useState([]);
+  const [detectingDevices, setDetectingDevices] = useState(false);
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -35,7 +38,7 @@ const CameraManager = ({ onCameraSelect, selectedCamera }) => {
   const fetchCameras = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_URL}/video/cameras`, {
+      const response = await fetch(`${API_URL}/cameras`, {
         credentials: 'include'
       });
       const data = await response.json();
@@ -52,23 +55,27 @@ const CameraManager = ({ onCameraSelect, selectedCamera }) => {
 
   const startCamera = async (cameraId) => {
     try {
-      const response = await fetch(`${API_URL}/video/cameras/${cameraId}/start`, {
+      const response = await fetch(`${API_URL}/cameras/${cameraId}/start`, {
         method: 'POST',
         credentials: 'include'
       });
       const data = await response.json();
-      
+
       if (data.success) {
         await fetchCameras();
+      } else {
+        // Show error message to user
+        alert(`Failed to start camera: ${data.message || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error starting camera:', error);
+      alert(`Error starting camera: ${error.message}`);
     }
   };
 
   const stopCamera = async (cameraId) => {
     try {
-      const response = await fetch(`${API_URL}/video/cameras/${cameraId}/stop`, {
+      const response = await fetch(`${API_URL}/cameras/${cameraId}/stop`, {
         method: 'POST',
         credentials: 'include'
       });
@@ -87,7 +94,7 @@ const CameraManager = ({ onCameraSelect, selectedCamera }) => {
 
     setIsConfiguring(true);
     try {
-      const response = await fetch(`${API_URL}/video/cameras/droidcam/configure`, {
+      const response = await fetch(`${API_URL}/cameras/droidcam/configure`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -118,7 +125,7 @@ const CameraManager = ({ onCameraSelect, selectedCamera }) => {
 
     setIsConfiguring(true);
     try {
-      const response = await fetch(`${API_URL}/video/cameras/ipwebcam/configure`, {
+      const response = await fetch(`${API_URL}/cameras/ipwebcam/configure`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -144,15 +151,81 @@ const CameraManager = ({ onCameraSelect, selectedCamera }) => {
     }
   };
 
+  const addCamoStudio = async () => {
+    if (isConfiguring) return; // Prevent duplicate requests
+
+    setIsConfiguring(true);
+    try {
+      const response = await fetch(`${API_URL}/cameras/camo-studio/configure`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          device_index: parseInt(newCameraConfig.device_index) || 3,
+          camera_id: `camo_studio_${Date.now()}`,
+          camera_name: newCameraConfig.name || 'Camo Studio Camera'
+        })
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        await fetchCameras();
+        setShowAddCamera(false);
+        resetCameraConfig();
+        alert('Camo Studio camera configured successfully!');
+      } else {
+        alert(`Failed to configure Camo Studio: ${data.message || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error adding Camo Studio:', error);
+      alert(`Error configuring Camo Studio: ${error.message}`);
+    } finally {
+      setIsConfiguring(false);
+    }
+  };
+
+  const detectCameraDevices = async () => {
+    setDetectingDevices(true);
+    try {
+      const response = await fetch(`${API_URL}/cameras/detect-devices`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        setAvailableDevices(data.devices || []);
+        if (data.devices && data.devices.length > 0) {
+          // Auto-select the first available device
+          setNewCameraConfig(prev => ({
+            ...prev,
+            device_index: data.devices[0].index.toString()
+          }));
+        }
+      } else {
+        alert(`Device detection failed: ${data.message || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error detecting devices:', error);
+      alert(`Error detecting devices: ${error.message}`);
+    } finally {
+      setDetectingDevices(false);
+    }
+  };
+
   const resetCameraConfig = () => {
     setNewCameraConfig({
       name: "",
       ip_address: "",
       webcam_url: "",
+      device_index: "3",
       zone: "",
       location: ""
     });
     setCameraType("droidcam");
+    setAvailableDevices([]);
   };
 
   const handleAddCamera = async () => {
@@ -162,8 +235,10 @@ const CameraManager = ({ onCameraSelect, selectedCamera }) => {
     try {
       if (cameraType === "droidcam") {
         await addDroidCam();
-      } else {
+      } else if (cameraType === "ipwebcam") {
         await addIPWebcam();
+      } else if (cameraType === "camo-studio") {
+        await addCamoStudio();
       }
     } finally {
       setIsConfiguring(false);
@@ -189,8 +264,23 @@ const CameraManager = ({ onCameraSelect, selectedCamera }) => {
         return <Wifi className="h-4 w-4 text-green-400" />;
       case 'inactive':
         return <WifiOff className="h-4 w-4 text-gray-400" />;
+      case 'error':
+        return <WifiOff className="h-4 w-4 text-red-400" />;
       default:
         return <WifiOff className="h-4 w-4 text-yellow-400" />;
+    }
+  };
+
+  const getStatusText = (status) => {
+    switch (status) {
+      case 'active':
+        return 'Active';
+      case 'inactive':
+        return 'Inactive';
+      case 'error':
+        return 'Error';
+      default:
+        return 'Unknown';
     }
   };
 
@@ -240,6 +330,12 @@ const CameraManager = ({ onCameraSelect, selectedCamera }) => {
                   <p className="font-medium">{camera.name}</p>
                   <p className="text-xs opacity-75">{camera.location}</p>
                   <p className="text-xs opacity-60">{camera.zone}</p>
+                  <p className={`text-xs font-medium ${
+                    camera.status === 'active' ? 'text-green-400' :
+                    camera.status === 'error' ? 'text-red-400' : 'text-gray-400'
+                  }`}>
+                    {getStatusText(camera.status)}
+                  </p>
                 </div>
               </div>
               
@@ -300,10 +396,10 @@ const CameraManager = ({ onCameraSelect, selectedCamera }) => {
                 <label className="block text-gray-300 text-sm mb-2">
                   Camera Type
                 </label>
-                <div className="flex space-x-2">
+                <div className="grid grid-cols-3 gap-2">
                   <button
                     onClick={() => setCameraType("droidcam")}
-                    className={`flex-1 px-3 py-2 rounded-lg text-sm transition-colors ${
+                    className={`px-3 py-2 rounded-lg text-sm transition-colors ${
                       cameraType === "droidcam"
                         ? 'bg-blue-600 text-white'
                         : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
@@ -313,13 +409,23 @@ const CameraManager = ({ onCameraSelect, selectedCamera }) => {
                   </button>
                   <button
                     onClick={() => setCameraType("ipwebcam")}
-                    className={`flex-1 px-3 py-2 rounded-lg text-sm transition-colors ${
+                    className={`px-3 py-2 rounded-lg text-sm transition-colors ${
                       cameraType === "ipwebcam"
                         ? 'bg-blue-600 text-white'
                         : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                     }`}
                   >
                     IP Webcam
+                  </button>
+                  <button
+                    onClick={() => setCameraType("camo-studio")}
+                    className={`px-3 py-2 rounded-lg text-sm transition-colors ${
+                      cameraType === "camo-studio"
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    }`}
+                  >
+                    Camo Studio
                   </button>
                 </div>
               </div>
@@ -332,7 +438,11 @@ const CameraManager = ({ onCameraSelect, selectedCamera }) => {
                   type="text"
                   value={newCameraConfig.name}
                   onChange={(e) => setNewCameraConfig({...newCameraConfig, name: e.target.value})}
-                  placeholder={cameraType === "droidcam" ? "My DroidCam" : "My IP Webcam"}
+                  placeholder={
+                    cameraType === "droidcam" ? "My DroidCam" :
+                    cameraType === "ipwebcam" ? "My IP Webcam" :
+                    "My Camo Studio Camera"
+                  }
                   className="w-full bg-gray-700 text-white rounded-lg px-3 py-2 border border-gray-600 focus:border-cyan-500 focus:outline-none"
                 />
               </div>
@@ -353,7 +463,7 @@ const CameraManager = ({ onCameraSelect, selectedCamera }) => {
                     Enter the IP address shown in your DroidCam app
                   </p>
                 </div>
-              ) : (
+              ) : cameraType === "ipwebcam" ? (
                 <div>
                   <label className="block text-gray-300 text-sm mb-2">
                     Webcam URL
@@ -368,6 +478,66 @@ const CameraManager = ({ onCameraSelect, selectedCamera }) => {
                   <p className="text-gray-400 text-xs mt-1">
                     Enter the full URL of your IP webcam
                   </p>
+                </div>
+              ) : (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-gray-300 text-sm">
+                      Device Index
+                    </label>
+                    <button
+                      type="button"
+                      onClick={detectCameraDevices}
+                      disabled={detectingDevices}
+                      className="px-2 py-1 bg-cyan-600 hover:bg-cyan-700 text-white text-xs rounded transition-colors disabled:opacity-50"
+                    >
+                      {detectingDevices ? 'Detecting...' : 'Auto-Detect'}
+                    </button>
+                  </div>
+
+                  {availableDevices.length > 0 ? (
+                    <select
+                      value={newCameraConfig.device_index}
+                      onChange={(e) => setNewCameraConfig({...newCameraConfig, device_index: e.target.value})}
+                      className="w-full bg-gray-700 text-white rounded-lg px-3 py-2 border border-gray-600 focus:border-cyan-500 focus:outline-none"
+                    >
+                      {availableDevices.map((device) => (
+                        <option key={device.index} value={device.index}>
+                          Device {device.index} - {device.name || 'Unknown Camera'}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="number"
+                      value={newCameraConfig.device_index}
+                      onChange={(e) => setNewCameraConfig({...newCameraConfig, device_index: e.target.value})}
+                      placeholder="3"
+                      min="0"
+                      max="10"
+                      className="w-full bg-gray-700 text-white rounded-lg px-3 py-2 border border-gray-600 focus:border-cyan-500 focus:outline-none"
+                    />
+                  )}
+
+                  <p className="text-gray-400 text-xs mt-1">
+                    {availableDevices.length > 0
+                      ? 'Select from detected cameras or use Auto-Detect to refresh'
+                      : 'Camera device index (usually 3 or 4 for Camo Studio). Click Auto-Detect to find available cameras.'
+                    }
+                  </p>
+
+                  {cameraType === "camo-studio" && (
+                    <div className="mt-3 p-3 bg-blue-900/30 border border-blue-700/50 rounded-lg">
+                      <h4 className="text-blue-300 text-sm font-medium mb-2">📱 Camo Studio Setup Tips:</h4>
+                      <ul className="text-blue-200 text-xs space-y-1">
+                        <li>• Make sure Camo Studio app is running on your phone</li>
+                        <li>• Connect your phone via USB or WiFi to your computer</li>
+                        <li>• The virtual camera should appear as "Camo" in your system</li>
+                        <li>• Try device indices 3, 4, or 5 if auto-detect doesn't work</li>
+                        <li>• Restart Camo Studio if the camera fails to start</li>
+                      </ul>
+                    </div>
+                  )}
                 </div>
               )}
 

@@ -1,69 +1,72 @@
 import { motion } from "framer-motion";
-import { Code, Users, Target, Github, Linkedin, Twitter, Zap, Shield, Globe, Heart } from "lucide-react";
+import { Code, Users, Target, Award, Github, Linkedin, Twitter } from "lucide-react";
 import { useSidebar } from "../../components/layout/DashboardLayout";
 
 const AboutPage = () => {
   const { sidebarOpen } = useSidebar();
-
-  const features = [
+  const teamMembers = [
     {
-      icon: Zap,
-      title: "Real-time Monitoring",
-      description: "Advanced real-time monitoring system with live video feeds and instant alerts for emergency response.",
-      color: "from-yellow-500 to-orange-600"
+      name: "Alex Johnson",
+      role: "Full Stack Developer",
+      image: "AJ",
+      bio: "Passionate about creating innovative solutions and leading development teams.",
+      social: { github: "#", linkedin: "#", twitter: "#" }
     },
     {
-      icon: Shield,
-      title: "Secure Platform",
-      description: "Enterprise-grade security with role-based access control and encrypted communications.",
-      color: "from-blue-500 to-blue-600"
+      name: "Sarah Chen",
+      role: "UI/UX Designer",
+      image: "SC",
+      bio: "Focused on creating beautiful and intuitive user experiences.",
+      social: { github: "#", linkedin: "#", twitter: "#" }
     },
     {
-      icon: Globe,
-      title: "Global Reach",
-      description: "Scalable infrastructure designed to handle emergency response operations worldwide.",
-      color: "from-green-500 to-green-600"
+      name: "Mike Rodriguez",
+      role: "Backend Developer",
+      image: "MR",
+      bio: "Expert in scalable backend systems and database optimization.",
+      social: { github: "#", linkedin: "#", twitter: "#" }
     },
     {
-      icon: Users,
-      title: "Team Collaboration",
-      description: "Seamless collaboration tools for administrators, operators, and first responders.",
-      color: "from-purple-500 to-purple-600"
+      name: "Emily Davis",
+      role: "Product Manager",
+      image: "ED",
+      bio: "Bridging the gap between technical implementation and user needs.",
+      social: { github: "#", linkedin: "#", twitter: "#" }
     }
   ];
 
-  const teamMembers = [
+  const features = [
     {
-      name: "Gurram Karthik",
-      role: "Lead Developer & Built an Responder Role",
-      description: "Full-stack developer with expertise in React, Node.js, and emergency response systems.",
-      social: { github: "#", linkedin: "#", twitter: "#" }
+      icon: Code,
+      title: "Modern Technology Stack",
+      description: "Built with React, Node.js, and modern web technologies for optimal performance.",
+      color: "from-blue-500 to-blue-600"
     },
     {
-      name: "Gurrapu Vishnu",
-      role: "Built an Operator Role",
-      description: "Full-stack developer with expertise in React, Node.js, and emergency response systems.",
-      social: { github: "#", linkedin: "#", twitter: "#" }
+      icon: Users,
+      title: "Collaborative Platform",
+      description: "Designed to facilitate teamwork and collaboration in hackathon environments.",
+      color: "from-green-500 to-green-600"
     },
     {
-      name: "Rishith Reddy",
-      role: "Built an Admin Role",
-      description: "Full-stack developer with expertise in React, Node.js, and emergency response systems.",
-      social: { github: "#", linkedin: "#", twitter: "#" }
+      icon: Target,
+      title: "Goal-Oriented",
+      description: "Focused on helping teams achieve their hackathon objectives efficiently.",
+      color: "from-purple-500 to-purple-600"
     },
     {
-      name: "Shiva Reddy",
-      role: "Real-Time Video Analysis with YOLO",
-      description: "Detects objects in video and returns results as JSON.",
-      social: { github: "#", linkedin: "#", twitter: "#" }
+      icon: Award,
+      title: "Award-Winning Design",
+      description: "Recognized for excellence in user experience and innovative features.",
+      color: "from-orange-500 to-orange-600"
     }
   ];
 
   const stats = [
-    { label: "Active Users", value: "10,000+", color: "from-blue-500 to-blue-600" },
-    { label: "Emergency Responses", value: "50,000+", color: "from-green-500 to-green-600" },
-    { label: "Cities Covered", value: "200+", color: "from-purple-500 to-purple-600" },
-    { label: "Response Time", value: "< 2 min", color: "from-orange-500 to-orange-600" }
+    { label: "Projects Completed", value: "150+" },
+    { label: "Active Users", value: "2.5K+" },
+    { label: "Team Members", value: "12" },
+    { label: "Countries", value: "25+" }
   ];
 
   return (
@@ -75,96 +78,66 @@ const AboutPage = () => {
         className="text-center"
       >
         <h1 className="text-4xl font-bold bg-gradient-to-r from-green-400 to-emerald-600 text-transparent bg-clip-text mb-4">
-          About Our Emergency Response Platform
+          About Our Project
         </h1>
         <p className="text-gray-300 text-lg max-w-3xl mx-auto">
-          We're building the next generation of emergency response technology, connecting first responders,
-          operators, and administrators through intelligent monitoring and rapid response coordination.
+          We're a passionate team of developers, designers, and innovators dedicated to creating 
+          exceptional hackathon experiences through cutting-edge technology and collaborative tools.
         </p>
       </motion.div>
 
-      {/* Stats Section */}
+      {/* Mission Statement */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="grid grid-cols-2 lg:grid-cols-4 gap-4"
+        className="bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-lg rounded-xl p-8 border border-gray-800"
+      >
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-white mb-4">Our Mission</h2>
+          <p className="text-gray-300 text-lg leading-relaxed max-w-4xl mx-auto">
+            To empower hackathon participants with intuitive, powerful tools that streamline project 
+            management, enhance collaboration, and accelerate innovation. We believe that great ideas 
+            deserve great execution, and our platform is designed to make that possible.
+          </p>
+        </div>
+      </motion.div>
+
+      {/* Stats */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="grid grid-cols-2 md:grid-cols-4 gap-6"
       >
         {stats.map((stat, index) => (
-          <motion.div
+          <div
             key={stat.label}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.3 + index * 0.1 }}
             className="bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-lg rounded-xl p-6 border border-gray-800 text-center"
           >
-            <div className={`text-3xl font-bold bg-gradient-to-r ${stat.color} text-transparent bg-clip-text mb-2`}>
+            <div className="text-3xl font-bold bg-gradient-to-r from-green-400 to-emerald-600 text-transparent bg-clip-text mb-2">
               {stat.value}
             </div>
-            <div className="text-gray-400 text-sm">{stat.label}</div>
-          </motion.div>
+            <div className="text-gray-300 text-sm">{stat.label}</div>
+          </div>
         ))}
       </motion.div>
 
-      {/* Mission Section */}
+      {/* Features */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
-        className="bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-lg rounded-xl p-8 border border-gray-800"
+        className="space-y-6"
       >
-        <div className="text-center mb-8">
-          <h2 className="text-2xl font-bold text-white mb-4 flex items-center justify-center">
-            <Target className="mr-3 text-green-400" size={28} />
-            Our Mission
-          </h2>
-          <p className="text-gray-300 text-lg max-w-4xl mx-auto">
-            To revolutionize emergency response through innovative technology that saves lives, reduces response times,
-            and empowers first responders with real-time intelligence and seamless coordination tools.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="text-center">
-            <div className="w-16 h-16 bg-gradient-to-r from-red-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Heart className="text-white" size={24} />
-            </div>
-            <h3 className="text-lg font-semibold text-white mb-2">Save Lives</h3>
-            <p className="text-gray-400">Every second counts in emergency situations. Our platform ensures rapid response and coordination.</p>
-          </div>
-
-          <div className="text-center">
-            <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Zap className="text-white" size={24} />
-            </div>
-            <h3 className="text-lg font-semibold text-white mb-2">Real-time Intelligence</h3>
-            <p className="text-gray-400">Live monitoring, instant alerts, and AI-powered insights for informed decision making.</p>
-          </div>
-
-          <div className="text-center">
-            <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Users className="text-white" size={24} />
-            </div>
-            <h3 className="text-lg font-semibold text-white mb-2">Seamless Coordination</h3>
-            <p className="text-gray-400">Connect all stakeholders in the emergency response chain for maximum efficiency.</p>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Features Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-      >
-        <h2 className="text-2xl font-bold text-white mb-6 text-center">Key Features</h2>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <h2 className="text-2xl font-bold text-white text-center mb-8">What Makes Us Special</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {features.map((feature, index) => (
             <motion.div
               key={feature.title}
-              initial={{ opacity: 0, x: index % 2 === 0 ? -20 : 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.6 + index * 0.1 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 + index * 0.1 }}
               className="bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-lg rounded-xl p-6 border border-gray-800"
             >
               <div className="flex items-start space-x-4">
@@ -172,8 +145,8 @@ const AboutPage = () => {
                   <feature.icon size={24} className="text-white" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-white mb-2">{feature.title}</h3>
-                  <p className="text-gray-400">{feature.description}</p>
+                  <h3 className="text-lg font-bold text-white mb-2">{feature.title}</h3>
+                  <p className="text-gray-300">{feature.description}</p>
                 </div>
               </div>
             </motion.div>
@@ -181,38 +154,48 @@ const AboutPage = () => {
         </div>
       </motion.div>
 
-      {/* Team Section */}
+      {/* Team */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.7 }}
+        transition={{ delay: 0.6 }}
+        className="space-y-6"
       >
-        <h2 className="text-2xl font-bold text-white mb-6 text-center">Meet Our Team</h2>
+        <h2 className="text-2xl font-bold text-white text-center mb-8">Meet Our Team</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {teamMembers.map((member, index) => (
             <motion.div
               key={member.name}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.8 + index * 0.1 }}
+              transition={{ delay: 0.7 + index * 0.1 }}
               className="bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-lg rounded-xl p-6 border border-gray-800 text-center"
             >
-              <div className="w-16 h-16 bg-gradient-to-r from-green-400 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-white font-bold text-lg">{member.name.charAt(0)}</span>
+              <div className="w-20 h-20 bg-gradient-to-r from-green-400 to-emerald-600 rounded-full flex items-center justify-center text-white text-xl font-bold mx-auto mb-4">
+                {member.image}
               </div>
-              <h3 className="text-lg font-semibold text-white mb-1">{member.name}</h3>
+              <h3 className="text-lg font-bold text-white mb-1">{member.name}</h3>
               <p className="text-green-400 text-sm mb-3">{member.role}</p>
-              <p className="text-gray-400 text-sm mb-4">{member.description}</p>
-
+              <p className="text-gray-300 text-sm mb-4">{member.bio}</p>
+              
               <div className="flex justify-center space-x-3">
-                <a href={member.social.github} className="p-2 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors duration-200">
-                  <Github size={16} className="text-gray-300 hover:text-white" />
+                <a
+                  href={member.social.github}
+                  className="p-2 bg-gray-800 bg-opacity-50 rounded-lg text-gray-400 hover:text-white hover:bg-opacity-70 transition-all duration-200"
+                >
+                  <Github size={16} />
                 </a>
-                <a href={member.social.linkedin} className="p-2 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors duration-200">
-                  <Linkedin size={16} className="text-gray-300 hover:text-white" />
+                <a
+                  href={member.social.linkedin}
+                  className="p-2 bg-gray-800 bg-opacity-50 rounded-lg text-gray-400 hover:text-white hover:bg-opacity-70 transition-all duration-200"
+                >
+                  <Linkedin size={16} />
                 </a>
-                <a href={member.social.twitter} className="p-2 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors duration-200">
-                  <Twitter size={16} className="text-gray-300 hover:text-white" />
+                <a
+                  href={member.social.twitter}
+                  className="p-2 bg-gray-800 bg-opacity-50 rounded-lg text-gray-400 hover:text-white hover:bg-opacity-70 transition-all duration-200"
+                >
+                  <Twitter size={16} />
                 </a>
               </div>
             </motion.div>
@@ -220,84 +203,25 @@ const AboutPage = () => {
         </div>
       </motion.div>
 
-      {/* Technology Stack */}
+      {/* Call to Action */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.9 }}
-        className="bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-lg rounded-xl p-8 border border-gray-800"
+        transition={{ delay: 0.8 }}
+        className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl p-8 text-center"
       >
-        <h2 className="text-2xl font-bold text-white mb-6 text-center flex items-center justify-center">
-          <Code className="mr-3 text-green-400" size={28} />
-          Technology Stack
-        </h2>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div>
-            <h3 className="text-lg font-semibold text-white mb-4">Frontend</h3>
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                <span className="text-gray-300">React.js</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                <span className="text-gray-300">Tailwind CSS</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
-                <span className="text-gray-300">Framer Motion</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
-                <span className="text-gray-300">React Router</span>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <h3 className="text-lg font-semibold text-white mb-4">Backend</h3>
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                <span className="text-gray-300">Node.js</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                <span className="text-gray-300">Express.js</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
-                <span className="text-gray-300">Socket.io</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-red-400 rounded-full"></div>
-                <span className="text-gray-300">MongoDB</span>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <h3 className="text-lg font-semibold text-white mb-4">Infrastructure</h3>
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                <span className="text-gray-300">Docker</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
-                <span className="text-gray-300">AWS</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                {/* <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
-                {/* <span className="text-gray-300">Kubernetes</span> */}
-              </div> 
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                <span className="text-gray-300">Redis</span>
-              </div>
-            </div>
-          </div>
+        <h2 className="text-2xl font-bold text-white mb-4">Ready to Get Started?</h2>
+        <p className="text-white text-opacity-90 mb-6 max-w-2xl mx-auto">
+          Join thousands of developers and teams who are already using our platform to build 
+          amazing projects and win hackathons.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <button className="px-6 py-3 bg-white text-green-600 font-bold rounded-lg hover:bg-gray-100 transition-colors duration-200">
+            Start Your Project
+          </button>
+          <button className="px-6 py-3 bg-transparent border-2 border-white text-white font-bold rounded-lg hover:bg-white hover:text-green-600 transition-all duration-200">
+            Learn More
+          </button>
         </div>
       </motion.div>
     </div>

@@ -10,53 +10,12 @@ import LoadingSpinner from "./components/ui/LoadingSpinner";
 // Dashboard Layout and Pages
 import DashboardLayout from "./components/layout/DashboardLayout";
 import HomePage from "./pages/dashboard/HomePage";
-import AdminDashboard from "./pages/dashboard/AdminDashboard";
-import OperatorDashboard from "./pages/dashboard/OperatorDashboard";
-import ResponderDashboard from "./pages/dashboard/ResponderDashboard";
 import ProfilePage from "./pages/dashboard/ProfilePage";
 import ContactPage from "./pages/dashboard/ContactPage";
 import AboutPage from "./pages/dashboard/AboutPage";
-
-// Operator-specific pages
-import LiveVideoFeedPage from "./pages/operator/LiveVideoFeedPage";
-import RealTimeAlertsPage from "./pages/operator/RealTimeAlertsPage";
-import ZoneMapPage from "./pages/operator/ZoneMapPage";
-import AICommandCenterPage from "./pages/operator/AICommandCenterPage";
-import IncidentTimelinePage from "./pages/operator/IncidentTimelinePage";
-
-// Responder-specific pages
-import AssignedTasksPage from "./pages/responder/AssignedTasksPage";
-import ResponderMapPage from "./pages/responder/ResponderMapPage";
-import QuickActionsPage from "./pages/responder/QuickActionsPage";
-import StatusCommunicationPage from "./pages/responder/StatusCommunicationPage";
-import IncidentReportsPage from "./pages/responder/IncidentReportsPage";
-
-// Admin-specific pages
-import UserManagementPage from "./pages/admin/UserManagementPage";
-import AnalyticsReportsPage from "./pages/admin/AnalyticsReportsPage";
-import SystemSettingsPage from "./pages/admin/SystemSettingsPage";
-import SecurityAuditPage from "./pages/admin/SecurityAuditPage";
-import ZoneManagementPage from "./pages/admin/ZoneManagementPage";
-import NotificationManagementPage from "./pages/admin/NotificationManagementPage";
-
-// Test pages
-import MapTestPage from "./pages/MapTestPage";
-import NotificationTestPage from "./pages/NotificationTestPage";
-import IPWebcamTest from "./pages/test/IPWebcamTest";
 import { Toaster } from "react-hot-toast";
 import { useAuthStore } from "./store/authStore";
 import { useEffect } from "react";
-
-// Import test utilities for development
-import "./utils/testActivityDetection.js";
-import RoleProtectedRoute from "./components/auth/RoleProtectedRoute";
-import NotificationModalProvider from "./components/notifications/NotificationModalProvider";
-import ModalTestButton from "./components/debug/ModalTestButton";
-import AlertTestButton from "./components/debug/AlertTestButton";
-
-// Emergency Alert System
-import EmergencyAlertModal from "./components/alerts/EmergencyAlertModal";
-import useEmergencyAlerts from "./hooks/useEmergencyAlerts";
 
 // protect routes that require authentication
 const ProtectedRoute = ({ children }) => {
@@ -66,37 +25,26 @@ const ProtectedRoute = ({ children }) => {
 		return <Navigate to='/login' replace />;
 	}
 
-	if (!user?.isVerified) {
+	if (!user.isVerified) {
 		return <Navigate to='/verify-email' replace />;
 	}
 
 	return children;
 };
 
-// redirect authenticated users to the appropriate dashboard
+// redirect authenticated users to the dashboard
 const RedirectAuthenticatedUser = ({ children }) => {
-	const { isAuthenticated, user, getRoleBasedRoute } = useAuthStore();
+	const { isAuthenticated, user } = useAuthStore();
 
-	if (isAuthenticated && user?.isVerified) {
-		const dashboardRoute = getRoleBasedRoute();
-		return <Navigate to={dashboardRoute} replace />;
+	if (isAuthenticated && user.isVerified) {
+		return <Navigate to='/dashboard' replace />;
 	}
 
 	return children;
 };
 
-// Component to redirect to role-based dashboard
-const RoleBasedRedirect = () => {
-	const { getRoleBasedRoute } = useAuthStore();
-	const dashboardRoute = getRoleBasedRoute();
-	return <Navigate to={dashboardRoute} replace />;
-};
-
 function App() {
-	const { isCheckingAuth, checkAuth, isAuthenticated } = useAuthStore();
-
-	// Emergency alert system (only for authenticated users)
-	const emergencyAlerts = useEmergencyAlerts();
+	const { isCheckingAuth, checkAuth } = useAuthStore();
 
 	useEffect(() => {
 		checkAuth();
@@ -114,7 +62,7 @@ function App() {
 			<FloatingShape color='bg-lime-500' size='w-32 h-32' top='40%' left='-10%' delay={2} />
 
 			<Routes>
-				{/* Role-based Dashboard Routes */}
+				{/* Dashboard Routes */}
 				<Route
 					path='/dashboard'
 					element={
@@ -123,184 +71,18 @@ function App() {
 						</ProtectedRoute>
 					}
 				>
-					{/* Default dashboard - redirects to role-based dashboard */}
-					<Route
-						index
-						element={<RoleBasedRedirect />}
-					/>
-
-					{/* Role-specific dashboard routes */}
-					<Route
-						path='admin'
-						element={
-							<RoleProtectedRoute allowedRoles={['admin']}>
-								<AdminDashboard />
-							</RoleProtectedRoute>
-						}
-					/>
-					<Route
-						path='operator'
-						element={
-							<RoleProtectedRoute allowedRoles={['admin', 'operator']}>
-								<OperatorDashboard />
-							</RoleProtectedRoute>
-						}
-					/>
-					<Route
-						path='responder'
-						element={
-							<RoleProtectedRoute allowedRoles={['admin', 'responder']}>
-								<ResponderDashboard />
-							</RoleProtectedRoute>
-						}
-					/>
-
-					{/* Operator-specific routes */}
-					<Route
-						path='operator/video-feed'
-						element={
-							<RoleProtectedRoute allowedRoles={['admin', 'operator']}>
-								<LiveVideoFeedPage />
-							</RoleProtectedRoute>
-						}
-					/>
-					<Route
-						path='operator/alerts'
-						element={
-							<RoleProtectedRoute allowedRoles={['admin', 'operator']}>
-								<RealTimeAlertsPage />
-							</RoleProtectedRoute>
-						}
-					/>
-					<Route
-						path='operator/zone-map'
-						element={
-							<RoleProtectedRoute allowedRoles={['admin', 'operator']}>
-								<ZoneMapPage />
-							</RoleProtectedRoute>
-						}
-					/>
-					<Route
-						path='operator/command-center'
-						element={
-							<RoleProtectedRoute allowedRoles={['admin', 'operator']}>
-								<AICommandCenterPage />
-							</RoleProtectedRoute>
-						}
-					/>
-					<Route
-						path='operator/timeline'
-						element={
-							<RoleProtectedRoute allowedRoles={['admin', 'operator']}>
-								<IncidentTimelinePage />
-							</RoleProtectedRoute>
-						}
-					/>
-
-					{/* Responder-specific routes */}
-					<Route
-						path='responder/tasks'
-						element={
-							<RoleProtectedRoute allowedRoles={['admin', 'responder']}>
-								<AssignedTasksPage />
-							</RoleProtectedRoute>
-						}
-					/>
-					<Route
-						path='responder/map'
-						element={
-							<RoleProtectedRoute allowedRoles={['admin', 'responder']}>
-								<ResponderMapPage />
-							</RoleProtectedRoute>
-						}
-					/>
-					<Route
-						path='responder/actions'
-						element={
-							<RoleProtectedRoute allowedRoles={['admin', 'responder']}>
-								<QuickActionsPage />
-							</RoleProtectedRoute>
-						}
-					/>
-					<Route
-						path='responder/communication'
-						element={
-							<RoleProtectedRoute allowedRoles={['admin', 'responder']}>
-								<StatusCommunicationPage />
-							</RoleProtectedRoute>
-						}
-					/>
-					<Route
-						path='responder/reports'
-						element={
-							<RoleProtectedRoute allowedRoles={['admin', 'responder']}>
-								<IncidentReportsPage />
-							</RoleProtectedRoute>
-						}
-					/>
-
-					{/* Admin-specific routes */}
-					<Route
-						path='admin/users'
-						element={
-							<RoleProtectedRoute allowedRoles={['admin']}>
-								<UserManagementPage />
-							</RoleProtectedRoute>
-						}
-					/>
-					<Route
-						path='admin/analytics'
-						element={
-							<RoleProtectedRoute allowedRoles={['admin']}>
-								<AnalyticsReportsPage />
-							</RoleProtectedRoute>
-						}
-					/>
-					<Route
-						path='admin/settings'
-						element={
-							<RoleProtectedRoute allowedRoles={['admin']}>
-								<SystemSettingsPage />
-							</RoleProtectedRoute>
-						}
-					/>
-					<Route
-						path='admin/security'
-						element={
-							<RoleProtectedRoute allowedRoles={['admin']}>
-								<SecurityAuditPage />
-							</RoleProtectedRoute>
-						}
-					/>
-					<Route
-						path='admin/zones'
-						element={
-							<RoleProtectedRoute allowedRoles={['admin']}>
-								<ZoneManagementPage />
-							</RoleProtectedRoute>
-						}
-					/>
-					<Route
-						path='admin/notifications'
-						element={
-							<RoleProtectedRoute allowedRoles={['admin']}>
-								<NotificationManagementPage />
-							</RoleProtectedRoute>
-						}
-					/>
-
-					{/* Common dashboard routes accessible to all authenticated users */}
+					<Route index element={<HomePage />} />
 					<Route path='profile' element={<ProfilePage />} />
 					<Route path='contact' element={<ContactPage />} />
 					<Route path='about' element={<AboutPage />} />
 				</Route>
 
-				{/* Root route - redirect to role-based dashboard */}
+				{/* Legacy Dashboard Route - redirect to new dashboard */}
 				<Route
 					path='/'
 					element={
 						<ProtectedRoute>
-							<RoleBasedRedirect />
+							<Navigate to='/dashboard' replace />
 						</ProtectedRoute>
 					}
 				/>
@@ -340,28 +122,10 @@ function App() {
 					}
 				/>
 
-				{/* Test routes */}
-				<Route path='/map-test' element={<MapTestPage />} />
-				<Route path='/notification-test' element={<NotificationTestPage />} />
-				<Route path='/ipwebcam-test' element={<IPWebcamTest />} />
-
 				{/* catch all routes */}
 				<Route path='*' element={<Navigate to='/dashboard' replace />} />
 			</Routes>
 			<Toaster />
-			<NotificationModalProvider />
-			<ModalTestButton />
-			<AlertTestButton />
-
-			{/* Emergency Alert Modal - Only show for authenticated users */}
-			{isAuthenticated && (
-				<EmergencyAlertModal
-					alert={emergencyAlerts.currentAlert}
-					isOpen={emergencyAlerts.isAlertModalOpen}
-					onClose={emergencyAlerts.closeAlert}
-					onAcknowledge={emergencyAlerts.acknowledgeAlert}
-				/>
-			)}
 		</div>
 	);
 }

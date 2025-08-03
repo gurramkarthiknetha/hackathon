@@ -63,8 +63,7 @@ const EmailVerificationPage = () => {
 	}, [code]);
 
 	return (
-		<div className='min-h-screen flex items-center justify-center relative z-50 px-4'>
-			<div className='max-w-md w-full bg-gray-800 bg-opacity-50 backdrop-filter backdrop-blur-xl rounded-2xl shadow-xl overflow-hidden'>
+		<div className='max-w-md w-full bg-gray-800 bg-opacity-50 backdrop-filter backdrop-blur-xl rounded-2xl shadow-xl overflow-hidden'>
 			<motion.div
 				initial={{ opacity: 0, y: -50 }}
 				animate={{ opacity: 1, y: 0 }}
@@ -104,7 +103,6 @@ const EmailVerificationPage = () => {
 				</form>
 			</motion.div>
 		</div>
-	</div>
-);
+	);
 };
 export default EmailVerificationPage;
