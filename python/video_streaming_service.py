@@ -40,14 +40,14 @@ class VideoStreamingService:
         # MongoDB connection
         self.setup_mongodb()
 
-        # Camera configurations - Only Camo Studio
+        # Camera configurations - System Camera
         self.camera_configs = {
-            "camo_studio_01": {
-                "id": "camo_studio_01",
-                "name": "Camo Studio Camera",
-                "zone": "studio_zone",
-                "location": "Camo Studio Virtual Camera",
-                "source": None,  # Will be set when Camo Studio is detected
+            "system_camera_01": {
+                "id": "system_camera_01",
+                "name": "System Camera",
+                "zone": "main_zone",
+                "location": "Built-in Camera",
+                "source": 0,  # Default system camera
                 "status": "inactive"
             }
         }
@@ -58,8 +58,8 @@ class VideoStreamingService:
         self.RUNNING_SPEED_THRESHOLD = 1.5
         self.FALL_ASPECT_RATIO_THRESHOLD = 1.3  # Lowered from 1.8 to detect more fallen people
 
-        # Auto-configure Camo Studio on startup
-        self.auto_configure_camo_studio()
+        # Auto-configure system camera on startup
+        self.auto_configure_system_camera()
         
     def setup_mongodb(self):
         """Setup MongoDB connection"""
@@ -73,21 +73,28 @@ class VideoStreamingService:
             print(f"MongoDB connection failed: {e}")
             self.mongo_client = None
 
-    def auto_configure_camo_studio(self):
-        """Automatically detect and configure Camo Studio camera"""
-        print("🔍 Auto-detecting Camo Studio camera...")
+    def auto_configure_system_camera(self):
+        """Automatically detect and configure system camera"""
+        print("🔍 Auto-detecting system camera...")
 
-        camo_device = self.detect_camo_studio_device()
-        if camo_device:
-            self.camera_configs["camo_studio_01"]["source"] = camo_device["index"]
-            self.camera_configs["camo_studio_01"]["name"] = camo_device["name"]
-            print(f"✅ Camo Studio auto-configured: {camo_device['name']} at device {camo_device['index']}")
+        if self.test_camera_connection(0):
+            self.camera_configs["system_camera_01"]["source"] = 0
+            self.camera_configs["system_camera_01"]["status"] = "ready"
+            print("✅ System camera auto-configured: Built-in Camera at device 0")
         else:
-            print("❌ No Camo Studio camera detected. Please ensure:")
-            print("   1. Camo Studio app is running on your phone")
-            print("   2. Phone is connected via USB or WiFi")
-            print("   3. Camo Studio virtual camera is installed")
-            self.camera_configs["camo_studio_01"]["status"] = "error"
+            # Try other camera indices
+            for i in range(1, 5):
+                if self.test_camera_connection(i):
+                    self.camera_configs["system_camera_01"]["source"] = i
+                    self.camera_configs["system_camera_01"]["status"] = "ready"
+                    print(f"✅ System camera auto-configured: Camera at device {i}")
+                    return
+            
+            print("❌ No system camera detected. Please ensure:")
+            print("   1. Camera permissions are granted")
+            print("   2. No other applications are using the camera")
+            print("   3. Camera drivers are installed")
+            self.camera_configs["system_camera_01"]["status"] = "error"
             
     def test_camera_connection(self, source):
         """Test if camera source is accessible"""
@@ -119,17 +126,21 @@ class VideoStreamingService:
             return False
 
     def detect_available_cameras(self, max_devices=10):
-        """Detect available camera devices, prioritizing Camo Studio"""
+        """Detect available camera devices, prioritizing system camera"""
         available_devices = []
 
-        # First, try to find Camo Studio specifically
-        camo_device = self.detect_camo_studio_device()
-        if camo_device:
-            available_devices.append(camo_device)
-            return available_devices
+        # First, try the built-in system camera (device 0)
+        if self.test_camera_connection(0):
+            available_devices.append({
+                "index": 0,
+                "name": "Built-in Camera",
+                "resolution": "Unknown",
+                "fps": 30,
+                "working": True
+            })
 
-        # If no Camo Studio found, scan all devices but exclude device 0 (built-in camera)
-        for device_index in range(1, max_devices):  # Start from 1 to skip built-in camera
+        # Then scan other devices
+        for device_index in range(1, max_devices):
             try:
                 cap = cv2.VideoCapture(device_index)
                 if cap.isOpened():
@@ -691,7 +702,7 @@ class VideoStreamingService:
 
             # Send alert if we have high confidence events
             if high_confidence_events:
-                backend_url = "http://localhost:5000/api/detection-alert"
+                backend_url = "http://localhost:5002/api/detection-alert"
 
                 # Prepare alert data
                 alert_data = {
@@ -768,6 +779,15 @@ def generate_video_stream(camera_id):
 @app.route('/api/video_feed/<camera_id>')
 def video_feed(camera_id):
     """Video streaming route"""
+    if camera_id not in video_service.cameras:
+        return jsonify({"error": "Camera not found or not active"}), 404
+
+    return Response(generate_video_stream(camera_id),
+                   mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@app.route('/api/cameras/<camera_id>/stream')
+def camera_stream(camera_id):
+    """Camera streaming route - alternative endpoint"""
     if camera_id not in video_service.cameras:
         return jsonify({"error": "Camera not found or not active"}), 404
 

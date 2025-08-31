@@ -13,6 +13,13 @@ import HomePage from "./pages/dashboard/HomePage";
 import ProfilePage from "./pages/dashboard/ProfilePage";
 import ContactPage from "./pages/dashboard/ContactPage";
 import AboutPage from "./pages/dashboard/AboutPage";
+
+// Operator Pages
+import LiveVideoFeedPage from "./pages/operator/LiveVideoFeedPage";
+import RealTimeAlertsPage from "./pages/operator/RealTimeAlertsPage";
+import ZoneMapPage from "./pages/operator/ZoneMapPage";
+import AICommandCenterPage from "./pages/operator/AICommandCenterPage";
+import IncidentTimelinePage from "./pages/operator/IncidentTimelinePage";
 import { Toaster } from "react-hot-toast";
 import { useAuthStore } from "./store/authStore";
 import { useEffect } from "react";
@@ -75,6 +82,13 @@ function App() {
 					<Route path='profile' element={<ProfilePage />} />
 					<Route path='contact' element={<ContactPage />} />
 					<Route path='about' element={<AboutPage />} />
+					
+					{/* Operator Routes */}
+					<Route path='operator/video-feed' element={<LiveVideoFeedPage />} />
+					<Route path='operator/alerts' element={<RealTimeAlertsPage />} />
+					<Route path='operator/zone-map' element={<ZoneMapPage />} />
+					<Route path='operator/command-center' element={<AICommandCenterPage />} />
+					<Route path='operator/timeline' element={<IncidentTimelinePage />} />
 				</Route>
 
 				{/* Legacy Dashboard Route - redirect to new dashboard */}

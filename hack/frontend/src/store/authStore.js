@@ -6,7 +6,7 @@ import { validateEmail, validatePassword, validateName, validateVerificationCode
 const API_URL = import.meta.env.VITE_API_URL
 	? `${import.meta.env.VITE_API_URL}/auth`
 	: import.meta.env.MODE === "development"
-		? "http://localhost:5000/api/auth"
+		? "http://localhost:5002/api/auth"
 		: "/api/auth";
 
 // Configure axios defaults
@@ -359,7 +359,7 @@ export const useAuthStore = create((set, get) => ({
 			const dashboardAPI = import.meta.env.VITE_API_URL
 				? `${import.meta.env.VITE_API_URL}/dashboard`
 				: import.meta.env.MODE === "development"
-					? "http://localhost:5000/api/dashboard"
+					? "http://localhost:5002/api/dashboard"
 					: "/api/dashboard";
 
 			let endpoint;
