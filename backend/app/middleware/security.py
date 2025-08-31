@@ -184,8 +184,7 @@ def create_rate_limiter(
     """Create a rate limiter with custom configuration"""
     return Limiter(
         key_func=key_func,
-        default_limits=[rate] if rate else None,
-        skip_if=skip_func
+        default_limits=[rate] if rate else None
     )
 
 

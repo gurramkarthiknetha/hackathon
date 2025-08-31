@@ -18,7 +18,7 @@ class UserListResponse(BaseModel):
 
 
 class UserSearchQuery(BaseModel):
-    role: Optional[str] = Field(None, regex="^(admin|operator|responder)$")
+    role: Optional[str] = Field(None, pattern="^(admin|operator|responder)$")
     zone: Optional[str] = None
     isActive: Optional[bool] = None
     isVerified: Optional[bool] = None

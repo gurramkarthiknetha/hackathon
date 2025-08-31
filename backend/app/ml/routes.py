@@ -2,7 +2,7 @@
 ML inference API routes for computer vision and AI analysis.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, BackgroundTasks, Request
 from fastapi.responses import JSONResponse
 from typing import List, Optional
 import numpy as np
@@ -10,7 +10,7 @@ import cv2
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.deps import get_db, require_any_role
-from app.ml.inference import MLInferenceService
+from app.ml.inference import InferenceService
 from app.ml.enhanced_detection import get_enhanced_detector
 from app.middleware.security import incident_limiter
 from slowapi import Limiter
@@ -23,9 +23,10 @@ limiter = Limiter(key_func=get_remote_address)
 @router.post("/detect")
 @limiter.limit("10/1minute")
 async def detect_objects(
+    request: Request,
     file: UploadFile = File(...),
     db: AsyncIOMotorDatabase = Depends(get_db),
-    current_user = Depends(require_any_role(["operator", "admin", "responder"]))
+    current_user = Depends(require_any_role)
 ):
     """Object detection endpoint"""
     try:
@@ -38,7 +39,7 @@ async def detect_objects(
             raise HTTPException(status_code=400, detail="Invalid image format")
         
         # Get ML service and run detection
-        ml_service = MLInferenceService()
+        ml_service = InferenceService()
         results = await ml_service.detect_objects(image)
         
         return JSONResponse(content=results)
@@ -50,9 +51,10 @@ async def detect_objects(
 @router.post("/analyze/enhanced")
 @limiter.limit("5/1minute")
 async def enhanced_multimodal_analysis(
+    request: Request,
     file: UploadFile = File(...),
     db: AsyncIOMotorDatabase = Depends(get_db),
-    current_user = Depends(require_any_role(["operator", "admin", "responder"]))
+    current_user = Depends(require_any_role)
 ):
     """Enhanced multi-modal detection analysis"""
     try:
@@ -72,9 +74,10 @@ async def enhanced_multimodal_analysis(
 @router.post("/analyze/comprehensive")
 @limiter.limit("3/1minute")
 async def comprehensive_analysis(
+    request: Request,
     file: UploadFile = File(...),
     db: AsyncIOMotorDatabase = Depends(get_db),
-    current_user = Depends(require_any_role(["operator", "admin", "responder"]))
+    current_user = Depends(require_any_role)
 ):
     """Comprehensive analysis combining all detection methods"""
     try:
@@ -87,7 +90,7 @@ async def comprehensive_analysis(
             raise HTTPException(status_code=400, detail="Invalid image format")
         
         # Run both standard ML inference and enhanced detection
-        ml_service = MLInferenceService()
+        ml_service = InferenceService()
         detector = get_enhanced_detector()
         
         # Standard detections
@@ -133,7 +136,7 @@ async def comprehensive_analysis(
 @router.post("/fire-smoke")
 @limiter.limit("10/1minute")
 async def detect_fire_smoke(
-    request,
+    request: Request,
     file: UploadFile = File(...),
     current_user: dict = Depends(require_any_role)
 ):
@@ -162,7 +165,7 @@ async def detect_fire_smoke(
 @router.post("/pose")
 @limiter.limit("10/1minute")
 async def analyze_pose(
-    request,
+    request: Request,
     file: UploadFile = File(...),
     current_user: dict = Depends(require_any_role)
 ):
@@ -191,7 +194,7 @@ async def analyze_pose(
 @router.post("/crowd-analysis")
 @limiter.limit("10/1minute")
 async def analyze_crowd(
-    request,
+    request: Request,
     file: UploadFile = File(...),
     current_user: dict = Depends(require_any_role)
 ):
@@ -220,7 +223,7 @@ async def analyze_crowd(
 @router.post("/analyze-frame")
 @limiter.limit("20/1minute")
 async def analyze_video_frame(
-    request,
+    request: Request,
     file: UploadFile = File(...),
     analysis_types: Optional[str] = "objects,fire_smoke,crowd",
     current_user: dict = Depends(require_any_role)

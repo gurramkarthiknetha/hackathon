@@ -316,14 +316,4 @@ async def check_auth(
     )
 
 
-# Rate limit error handler
-@router.exception_handler(RateLimitExceeded)
-async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
-    response = JSONResponse(
-        status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-        content={"success": False, "message": f"Rate limit exceeded: {exc.detail}"}
-    )
-    response = request.app.state.limiter._inject_headers(
-        response, request.state.view_rate_limit
-    )
-    return response
+# Rate limit error handler is now handled in main.py

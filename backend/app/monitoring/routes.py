@@ -10,12 +10,12 @@ from bson import ObjectId
 import logging
 
 from app.deps import get_database, get_current_user, require_role
-from app.auth.models import User
+from app.auth.models import UserResponse
 from app.monitoring.models import (
     Incident, IncidentCreate, IncidentUpdate, IncidentQuery, IncidentResponse,
     Zone, ZoneCreate, ZoneUpdate, ZoneQuery, DashboardStats, AlertCreate
 )
-from app.middleware.security import rate_limit
+from app.middleware.security import incident_limiter
 from app.realtime.socket import sio
 
 router = APIRouter(prefix="/api/monitoring", tags=["monitoring"])
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 # Incident endpoints
 @router.get("/incidents", response_model=IncidentResponse)
-@rate_limit("monitoring", max_requests=100, window_seconds=60)
+@incident_limiter.limit("100/60second")
 async def get_incidents(
     query: IncidentQuery = Depends(),
     db: AsyncIOMotorDatabase = Depends(get_database),
@@ -78,7 +78,7 @@ async def get_incidents(
 
 
 @router.get("/incidents/{incident_id}", response_model=Incident)
-@rate_limit("monitoring", max_requests=100, window_seconds=60)
+@incident_limiter.limit("100/60second")
 async def get_incident(
     incident_id: str,
     db: AsyncIOMotorDatabase = Depends(get_database),
@@ -103,7 +103,7 @@ async def get_incident(
 
 
 @router.post("/incidents", response_model=Incident, status_code=status.HTTP_201_CREATED)
-@rate_limit("monitoring", max_requests=50, window_seconds=60)
+@incident_limiter.limit("50/60second")
 async def create_incident(
     incident_data: IncidentCreate,
     db: AsyncIOMotorDatabase = Depends(get_database),
@@ -140,7 +140,7 @@ async def create_incident(
 
 
 @router.put("/incidents/{incident_id}", response_model=Incident)
-@rate_limit("monitoring", max_requests=50, window_seconds=60)
+@incident_limiter.limit("50/60second")
 async def update_incident(
     incident_id: str,
     update_data: IncidentUpdate,
@@ -212,7 +212,7 @@ async def update_incident(
 
 # Zone endpoints
 @router.get("/zones", response_model=List[Zone])
-@rate_limit("monitoring", max_requests=100, window_seconds=60)
+@incident_limiter.limit("100/60second")
 async def get_zones(
     query: ZoneQuery = Depends(),
     db: AsyncIOMotorDatabase = Depends(get_database),
@@ -240,7 +240,7 @@ async def get_zones(
 
 
 @router.get("/zones/{zone_id}", response_model=Zone)
-@rate_limit("monitoring", max_requests=100, window_seconds=60)
+@incident_limiter.limit("100/60second")
 async def get_zone(
     zone_id: str,
     db: AsyncIOMotorDatabase = Depends(get_database),
@@ -267,7 +267,7 @@ async def get_zone(
 
 
 @router.post("/zones", response_model=Zone, status_code=status.HTTP_201_CREATED)
-@rate_limit("monitoring", max_requests=20, window_seconds=60)
+@incident_limiter.limit("20/60second")
 async def create_zone(
     zone_data: ZoneCreate,
     db: AsyncIOMotorDatabase = Depends(get_database),
@@ -303,7 +303,7 @@ async def create_zone(
 
 
 @router.put("/zones/{zone_id}", response_model=Zone)
-@rate_limit("monitoring", max_requests=50, window_seconds=60)
+@incident_limiter.limit("50/60second")
 async def update_zone(
     zone_id: str,
     update_data: ZoneUpdate,
@@ -346,7 +346,7 @@ async def update_zone(
 
 # Dashboard endpoints
 @router.get("/dashboard/stats", response_model=DashboardStats)
-@rate_limit("monitoring", max_requests=50, window_seconds=60)
+@incident_limiter.limit("50/60second")
 async def get_dashboard_stats(
     db: AsyncIOMotorDatabase = Depends(get_database),
     current_user: User = Depends(get_current_user)
@@ -432,7 +432,7 @@ async def get_dashboard_stats(
 
 
 @router.post("/alerts", status_code=status.HTTP_201_CREATED)
-@rate_limit("monitoring", max_requests=20, window_seconds=60)
+@incident_limiter.limit("20/60second")
 async def create_alert(
     alert_data: AlertCreate,
     db: AsyncIOMotorDatabase = Depends(get_database),

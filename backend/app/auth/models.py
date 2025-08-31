@@ -20,14 +20,16 @@ class PyObjectId(ObjectId):
         return ObjectId(v)
 
     @classmethod
-    def __modify_schema__(cls, field_schema):
-        field_schema.update(type="string")
+    def __get_pydantic_json_schema__(cls, field_schema, handler):
+        json_schema = handler(field_schema)
+        json_schema.update(type="string")
+        return json_schema
 
 
 class UserBase(BaseModel):
     email: EmailStr
     name: str = Field(..., min_length=1, max_length=100)
-    role: str = Field(default="operator", regex="^(admin|operator|responder)$")
+    role: str = Field(default="operator", pattern="^(admin|operator|responder)$")
 
 
 class UserCreate(UserBase):
@@ -68,7 +70,7 @@ class UserResponse(UserBase):
 
 class UserUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=100)
-    role: Optional[str] = Field(None, regex="^(admin|operator|responder)$")
+    role: Optional[str] = Field(None, pattern="^(admin|operator|responder)$")
     assignedZone: Optional[str] = None
     phoneNumber: Optional[str] = None
     isActive: Optional[bool] = None

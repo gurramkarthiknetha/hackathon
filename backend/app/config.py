@@ -5,7 +5,8 @@ Loads environment variables with validation and defaults.
 
 import os
 from typing import List, Optional
-from pydantic import BaseSettings, validator
+from pydantic import validator
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
@@ -21,7 +22,7 @@ class Settings(BaseSettings):
     db_name: str = "auth_tutorial"
     
     # JWT Configuration
-    jwt_secret: str
+    jwt_secret: str = "default_jwt_secret_change_in_production"
     jwt_algorithm: str = "HS256"
     jwt_expires_in: int = 24 * 60 * 60  # 24 hours in seconds
     
@@ -39,9 +40,9 @@ class Settings(BaseSettings):
     smtp_host: str = "smtp.gmail.com"
     smtp_port: int = 587
     smtp_secure: bool = False
-    smtp_user: str
-    smtp_pass: str
-    smtp_from: str
+    smtp_user: Optional[str] = None
+    smtp_pass: Optional[str] = None
+    smtp_from: Optional[str] = None
     smtp_from_name: str = "AI Event Monitor"
     
     # Google Maps Configuration
@@ -87,28 +88,12 @@ class Settings(BaseSettings):
             return False
         return v
 
-    class Config:
-        env_file = ".env"
-        env_prefix = ""
-        case_sensitive = False
-        
-        # Environment variable mappings
-        fields = {
-            'app_host': {'env': 'APP_HOST'},
-            'app_port': {'env': 'PORT'},
-            'environment': {'env': 'NODE_ENV'},
-            'mongodb_uri': {'env': 'MONGO_URI'},
-            'jwt_secret': {'env': 'JWT_SECRET'},
-            'client_url': {'env': 'CLIENT_URL'},
-            'smtp_host': {'env': 'EMAIL_HOST'},
-            'smtp_port': {'env': 'EMAIL_PORT'},
-            'smtp_secure': {'env': 'EMAIL_SECURE'},
-            'smtp_user': {'env': 'EMAIL_USER'},
-            'smtp_pass': {'env': 'EMAIL_PASS'},
-            'smtp_from': {'env': 'EMAIL_FROM'},
-            'smtp_from_name': {'env': 'EMAIL_FROM_NAME'},
-            'google_maps_api_key': {'env': 'GOOGLE_MAPS_API_KEY'},
-        }
+    model_config = {
+        "env_file": ".env",
+        "env_prefix": "",
+        "case_sensitive": False,
+        "extra": "ignore"
+    }
 
 
 # Global settings instance

@@ -20,8 +20,10 @@ class PyObjectId(ObjectId):
         return ObjectId(v)
 
     @classmethod
-    def __modify_schema__(cls, field_schema):
-        field_schema.update(type="string")
+    def __get_pydantic_json_schema__(cls, field_schema, handler):
+        json_schema = handler(field_schema)
+        json_schema.update(type="string")
+        return json_schema
 
 
 class Location(BaseModel):
@@ -68,7 +70,7 @@ class Zone(BaseModel):
     center: Location
     capacity: int
     currentOccupancy: int = 0
-    riskLevel: str = Field(..., regex="^(low|medium|high|critical)$")
+    riskLevel: str = Field(..., pattern="^(low|medium|high|critical)$")
     eventType: Optional[str] = None
     isActive: bool = True
     cameras: List[Camera] = []
@@ -88,10 +90,10 @@ class Incident(BaseModel):
     type: str
     zone: str
     location: Location
-    severity: str = Field(..., regex="^(low|medium|high|critical)$")
+    severity: str = Field(..., pattern="^(low|medium|high|critical)$")
     confidence: float = Field(..., ge=0, le=100)
     description: str
-    status: str = Field(..., regex="^(active|assigned|in_progress|resolved|dismissed)$")
+    status: str = Field(..., pattern="^(active|assigned|in_progress|resolved|dismissed)$")
     aiGenerated: bool = True
     humanApprovalRequired: bool = False
     humanApproved: bool = False
@@ -116,7 +118,7 @@ class IncidentCreate(BaseModel):
     type: str
     zone: str
     location: Location
-    severity: str = Field(..., regex="^(low|medium|high|critical)$")
+    severity: str = Field(..., pattern="^(low|medium|high|critical)$")
     confidence: float = Field(..., ge=0, le=100)
     description: str
     priority: int = Field(..., ge=1, le=5)
@@ -125,7 +127,7 @@ class IncidentCreate(BaseModel):
 
 
 class IncidentUpdate(BaseModel):
-    status: Optional[str] = Field(None, regex="^(active|assigned|in_progress|resolved|dismissed)$")
+    status: Optional[str] = Field(None, pattern="^(active|assigned|in_progress|resolved|dismissed)$")
     assignedTo: Optional[str] = None
     humanApproved: Optional[bool] = None
     notes: Optional[str] = None
@@ -158,7 +160,7 @@ class ZoneCreate(BaseModel):
     coordinates: List[List[float]]
     center: Location
     capacity: int
-    riskLevel: str = Field(..., regex="^(low|medium|high|critical)$")
+    riskLevel: str = Field(..., pattern="^(low|medium|high|critical)$")
     eventType: Optional[str] = None
     cameras: List[Camera] = []
     emergencyExits: List[EmergencyExit] = []
@@ -169,7 +171,7 @@ class ZoneUpdate(BaseModel):
     description: Optional[str] = None
     capacity: Optional[int] = None
     currentOccupancy: Optional[int] = None
-    riskLevel: Optional[str] = Field(None, regex="^(low|medium|high|critical)$")
+    riskLevel: Optional[str] = Field(None, pattern="^(low|medium|high|critical)$")
     isActive: Optional[bool] = None
     assignedResponders: Optional[List[str]] = None
 
@@ -200,6 +202,6 @@ class DashboardStats(BaseModel):
 class AlertCreate(BaseModel):
     type: str
     zone: str
-    severity: str = Field(..., regex="^(low|medium|high|critical)$")
+    severity: str = Field(..., pattern="^(low|medium|high|critical)$")
     message: str
     metadata: Optional[Dict[str, Any]] = None
