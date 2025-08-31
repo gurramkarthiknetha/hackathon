@@ -1,0 +1,76 @@
+# FastAPI and ASGI server
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+
+# Database
+motor==3.3.2
+pymongo==4.6.0
+
+# Authentication and Security
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.6
+
+# Validation and serialization
+pydantic[email]==2.5.0
+
+# Rate limiting
+slowapi==0.1.9
+
+# Real-time communication
+python-socketio[asyncio_server]==5.10.0
+
+# Email
+aiosmtplib==3.0.1
+
+# Environment and configuration
+python-dotenv==1.0.0
+
+# HTTP client
+httpx==0.25.2
+
+# Background tasks and async utilities
+asyncio-mqtt==0.16.1
+
+# ML and Computer Vision Stack
+torch>=2.0.0
+torchvision>=0.15.0
+ultralytics>=8.0.0
+tensorflow>=2.13.0
+keras>=2.13.0
+
+# Image and Video Processing
+opencv-python>=4.8.0
+mediapipe>=0.10.0
+numpy>=1.24.0
+pandas>=2.0.0
+plotly>=5.15.0
+
+# Audio Processing
+pyaudio>=0.2.11
+librosa>=0.10.0
+soundfile>=0.12.1
+scipy>=1.11.0
+
+# Video utilities
+yt-dlp>=2023.10.0
+
+# Web framework compatibility (for migration period)
+flask>=2.3.0
+flask-cors>=4.0.0
+flask-socketio>=5.3.0
+streamlit>=1.28.0
+
+# Utilities
+requests>=2.31.0
+tenacity>=8.2.3
+
+# Development and testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
+httpx==0.25.2
+
+# Additional ML requirements from python/ directory
+pymongo>=4.5.0
+python-dotenv>=1.0.0
+soundfile>=0.12.0
