@@ -702,7 +702,7 @@ class VideoStreamingService:
 
             # Send alert if we have high confidence events
             if high_confidence_events:
-                backend_url = "http://localhost:5002/api/detection-alert"
+                backend_url = "http://localhost:3000/api/detection-alert"
 
                 # Prepare alert data
                 alert_data = {

@@ -12,7 +12,16 @@ export const verifyToken = (req, res, next) => {
 		req.userRole = decoded.role;
 		next();
 	} catch (error) {
-		console.log("Error in verifyToken ", error);
-		return res.status(500).json({ success: false, message: "Server error" });
+		// Likely an invalid/expired token or bad JWT secret. Treat as Unauthorized, not Server Error.
+		console.error("verifyToken: JWT verification failed", error?.message || error);
+		// Clear potentially invalid cookie so subsequent requests don't keep failing
+		try {
+			res.clearCookie("token", {
+				httpOnly: true,
+				sameSite: "strict",
+				secure: process.env.NODE_ENV === "production",
+			});
+		} catch (_) { /* noop */ }
+		return res.status(401).json({ success: false, message: "Unauthorized - invalid or expired token" });
 	}
 };

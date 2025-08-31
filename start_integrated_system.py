@@ -76,7 +76,7 @@ class IntegratedSystemManager:
             time.sleep(3)
             
             if self.backend_process.poll() is None:
-                print("✅ Backend server started on http://localhost:5000")
+                print("✅ Backend server started on http://localhost:3000")
                 return True
             else:
                 print("❌ Backend server failed to start")
@@ -155,7 +155,7 @@ class IntegratedSystemManager:
         print("\n" + "="*60)
         print("🎯 INTEGRATED AI MONITORING SYSTEM RUNNING")
         print("="*60)
-        print("📊 Backend API:        http://localhost:5000")
+        print("📊 Backend API:        http://localhost:3000")
         print("🤖 AI Detection API:   http://localhost:5001")
         print("🎨 Frontend Dashboard: http://localhost:5173")
         print("="*60)

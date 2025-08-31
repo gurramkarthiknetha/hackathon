@@ -46,7 +46,7 @@ class SocketService {
     }
 
     // Remove /api from the URL for socket connection
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5002/api';
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
     const serverUrl = apiUrl.replace('/api', '');
 
     this.socket = io(serverUrl, {

@@ -29,7 +29,7 @@ const CameraManager = ({ onCameraSelect, selectedCamera }) => {
   const [availableDevices, setAvailableDevices] = useState([]);
   const [detectingDevices, setDetectingDevices] = useState(false);
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002/api';
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
   useEffect(() => {
     fetchCameras();
