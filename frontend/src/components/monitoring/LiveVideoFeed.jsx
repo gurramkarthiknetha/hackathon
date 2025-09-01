@@ -578,38 +578,38 @@ const LiveVideoFeed = ({ selectedIncident, currentCamera: propCurrentCamera }) =
     );
   };
 
-  // AI Detection Results Component
-  const AIDetectionResults = () => {
-    if (!detectionResults || currentCamera === 'iphone_camera' || (currentCamera && currentCamera.startsWith('system_'))) return null;
+  // // AI Detection Results Component
+  // const AIDetectionResults = () => {
+  //   if (!detectionResults || currentCamera === 'iphone_camera' || (currentCamera && currentCamera.startsWith('system_'))) return null;
 
-    const detections = detectionResults.detections || {};
-    const activeDetections = Object.entries(detections).filter(([_, detection]) => detection.detected);
+  //   const detections = detectionResults.detections || {};
+  //   const activeDetections = Object.entries(detections).filter(([_, detection]) => detection.detected);
 
-    if (activeDetections.length === 0) return null;
+  //   if (activeDetections.length === 0) return null;
 
-    return (
-      <div className="absolute bottom-4 left-4 bg-red-600/90 px-4 py-3 rounded-lg max-w-sm">
-        <h4 className="text-white font-bold mb-2">🚨 AI DETECTIONS</h4>
-        <div className="space-y-1">
-          {activeDetections.map(([eventType, detection]) => (
-            <div key={eventType} className="flex justify-between items-center">
-              <span className="text-white text-sm capitalize">{eventType}</span>
-              <span className="text-yellow-300 text-sm font-bold">
-                {(detection.confidence * 100).toFixed(1)}%
-              </span>
-            </div>
-          ))}
-        </div>
-        {detectionResults.person_count > 0 && (
-          <div className="mt-2 pt-2 border-t border-red-400">
-            <span className="text-white text-sm">
-              👥 {detectionResults.person_count} people detected
-            </span>
-          </div>
-        )}
-      </div>
-    );
-  };
+  //   return (
+  //     <div className="absolute bottom-4 left-4 bg-red-600/90 px-4 py-3 rounded-lg max-w-sm">
+  //       <h4 className="text-white font-bold mb-2">🚨 AI DETECTIONS</h4>
+  //       <div className="space-y-1">
+  //         {activeDetections.map(([eventType, detection]) => (
+  //           <div key={eventType} className="flex justify-between items-center">
+  //             <span className="text-white text-sm capitalize">{eventType}</span>
+  //             <span className="text-yellow-300 text-sm font-bold">
+  //               {(detection.confidence * 100).toFixed(1)}%
+  //             </span>
+  //           </div>
+  //         ))}
+  //       </div>
+  //       {detectionResults.person_count > 0 && (
+  //         <div className="mt-2 pt-2 border-t border-red-400">
+  //           <span className="text-white text-sm">
+  //             👥 {detectionResults.person_count} people detected
+  //           </span>
+  //         </div>
+  //       )}
+  //     </div>
+  //   );
+  // };
 
   return (
     <div className="h-full flex flex-col bg-gray-900">
@@ -701,78 +701,64 @@ const LiveVideoFeed = ({ selectedIncident, currentCamera: propCurrentCamera }) =
               🔍 Test Detection
             </button>
             
-            {/* Detection Results Overlay */}
+            {/* Detection Results Overlay - Compact Bottom Right */}
             {detectionResults && (
-              <div className="absolute top-4 right-4 bg-black bg-opacity-80 text-white p-4 rounded-lg max-w-sm max-h-96 overflow-y-auto">
-                <h4 className="font-bold mb-3 text-green-400">🤖 AI Detection Results</h4>
+              <div className="absolute bottom-4 right-4 bg-black bg-opacity-90 text-white p-3 rounded-lg max-w-xs max-h-64 overflow-y-auto text-xs">
+                <h4 className="font-bold mb-2 text-green-400 text-sm">🤖 AI Results</h4>
                 
-                {/* All Objects Count */}
-                <div className="mb-3">
-                  <span className="text-blue-400 font-semibold">📦 Total Objects: </span>
-                  <span className="text-white font-bold">{detectionResults.standard_ml?.objects?.length || 0}</span>
-                </div>
-                
-                {/* Person Count */}
-                <div className="mb-3">
-                  <span className="text-blue-400 font-semibold">👥 Persons: </span>
-                  <span className="text-white font-bold">{detectionResults.enhanced_multimodal?.person_count || 0}</span>
+                {/* Compact Counts */}
+                <div className="flex justify-between mb-2 text-xs">
+                  <span className="text-blue-400">📦 Objects: <span className="text-white font-bold">{detectionResults.standard_ml?.objects?.length || 0}</span></span>
+                  <span className="text-blue-400">👥 Persons: <span className="text-white font-bold">{detectionResults.enhanced_multimodal?.person_count || 0}</span></span>
                 </div>
 
-                {/* All Detected Objects */}
+                {/* Compact Object List */}
                 {detectionResults.standard_ml?.objects && detectionResults.standard_ml.objects.length > 0 && (
-                  <div className="space-y-1 mb-3">
-                    <h5 className="text-cyan-400 font-semibold text-sm">Detected Objects:</h5>
-                    <div className="max-h-32 overflow-y-auto space-y-1">
-                      {detectionResults.standard_ml.objects.map((obj, index) => (
-                        <div key={index} className="flex justify-between items-center text-xs">
-                          <span className="capitalize text-gray-300 truncate">
+                  <div className="mb-2">
+                    <h5 className="text-cyan-400 font-semibold text-xs mb-1">Objects:</h5>
+                    <div className="max-h-20 overflow-y-auto space-y-0.5">
+                      {detectionResults.standard_ml.objects.slice(0, 5).map((obj, index) => (
+                        <div key={index} className="flex justify-between items-center">
+                          <span className="capitalize text-gray-300 truncate text-xs">
                             {obj.class_name}
                           </span>
-                          <span className="text-yellow-300 font-bold ml-2">
+                          <span className="text-yellow-300 font-bold ml-1 text-xs">
                             {(obj.confidence * 100).toFixed(0)}%
                           </span>
                         </div>
                       ))}
+                      {detectionResults.standard_ml.objects.length > 5 && (
+                        <div className="text-gray-400 text-xs">+{detectionResults.standard_ml.objects.length - 5} more...</div>
+                      )}
                     </div>
                   </div>
                 )}
 
-                {/* Emergency Detection Categories */}
-                {detectionResults.enhanced_multimodal?.detections && Object.keys(detectionResults.enhanced_multimodal.detections).length > 0 && (
-                  <div className="space-y-2 mb-3">
-                    <h5 className="text-yellow-400 font-semibold text-sm">Emergency Status:</h5>
-                    {Object.entries(detectionResults.enhanced_multimodal.detections).map(([category, detection]) => (
-                      <div key={category} className="flex justify-between items-center text-sm">
-                        <span className="capitalize text-gray-300">
-                          {category.replace(/([A-Z])/g, ' $1').trim()}:
-                        </span>
-                        <div className="flex items-center space-x-2">
-                          <span className={`font-bold ${detection.detected ? 'text-red-400' : 'text-green-400'}`}>
-                            {detection.detected ? '⚠️ YES' : '✅ NO'}
+                {/* Compact Emergency Status - Only show active alerts */}
+                {detectionResults.enhanced_multimodal?.detections && (
+                  <div className="mb-2">
+                    {Object.entries(detectionResults.enhanced_multimodal.detections)
+                      .filter(([_, detection]) => detection.detected)
+                      .map(([category, detection]) => (
+                        <div key={category} className="flex justify-between items-center mb-1">
+                          <span className="capitalize text-red-400 text-xs font-bold">
+                            ⚠️ {category.replace(/([A-Z])/g, ' $1').trim()}
                           </span>
-                          {detection.detected && (
-                            <span className="text-yellow-300 text-xs">
-                              {(detection.confidence * 100).toFixed(1)}%
-                            </span>
-                          )}
+                          <span className="text-yellow-300 text-xs">
+                            {(detection.confidence * 100).toFixed(0)}%
+                          </span>
                         </div>
-                      </div>
-                    ))}
+                      ))
+                    }
+                    {!Object.values(detectionResults.enhanced_multimodal.detections).some(d => d.detected) && (
+                      <div className="text-green-400 text-xs">✅ All Clear</div>
+                    )}
                   </div>
                 )}
 
-                {/* Person Bounding Boxes Info */}
-                {detectionResults.enhanced_multimodal?.person_bboxes && detectionResults.enhanced_multimodal.person_bboxes.length > 0 && (
-                  <div className="mt-3 pt-2 border-t border-gray-600">
-                    <span className="text-cyan-400 text-sm">
-                      📦 {detectionResults.enhanced_multimodal.person_bboxes.length} person(s) with enhanced tracking
-                    </span>
-                  </div>
-                )}
-
-                {/* Timestamp */}
-                <div className="mt-3 pt-2 border-t border-gray-600 text-xs text-gray-400">
-                  Last updated: {new Date(detectionResults.enhanced_multimodal?.timestamp || detectionResults.timestamp || Date.now()).toLocaleTimeString()}
+                {/* Compact Timestamp */}
+                <div className="mt-2 pt-1 border-t border-gray-600 text-xs text-gray-400">
+                  {new Date(detectionResults.enhanced_multimodal?.timestamp || detectionResults.timestamp || Date.now()).toLocaleTimeString()}
                 </div>
               </div>
             )}
@@ -791,7 +777,7 @@ const LiveVideoFeed = ({ selectedIncident, currentCamera: propCurrentCamera }) =
             <AIDetectionStatus />
 
             {/* AI Detection Results */}
-            <AIDetectionResults />
+            {/* <AIDetectionResults /> */}
           </div>
         ) : (
           <div className="text-center p-8">

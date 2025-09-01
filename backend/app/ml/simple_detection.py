@@ -33,6 +33,46 @@ class SimpleDetectionService:
             logger.error(f"❌ Failed to load YOLO model: {e}")
             self.model = None
     
+    def detect_fire_by_color(self, image: np.ndarray) -> dict:
+        """Detect fire using color-based analysis"""
+        try:
+            # Convert to HSV for better color detection
+            hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+            
+            # Define fire color ranges (orange/red/yellow)
+            fire_ranges = [
+                # Orange-red range
+                (np.array([0, 120, 70]), np.array([20, 255, 255])),
+                # Yellow-orange range  
+                (np.array([15, 120, 70]), np.array([35, 255, 255])),
+                # Deep red range
+                (np.array([170, 120, 70]), np.array([180, 255, 255]))
+            ]
+            
+            fire_mask = np.zeros(hsv.shape[:2], dtype=np.uint8)
+            for lower, upper in fire_ranges:
+                mask = cv2.inRange(hsv, lower, upper)
+                fire_mask = cv2.bitwise_or(fire_mask, mask)
+            
+            # Calculate fire area percentage
+            fire_pixels = cv2.countNonZero(fire_mask)
+            total_pixels = image.shape[0] * image.shape[1]
+            fire_percentage = fire_pixels / total_pixels
+            
+            # Fire detected if significant fire-colored area
+            fire_detected = fire_percentage > 0.02  # 2% of image
+            confidence = min(fire_percentage * 10, 1.0)  # Scale to 0-1
+            
+            return {
+                "detected": fire_detected,
+                "confidence": confidence,
+                "fire_percentage": fire_percentage
+            }
+            
+        except Exception as e:
+            logger.error(f"Fire detection error: {e}")
+            return {"detected": False, "confidence": 0.0, "fire_percentage": 0.0}
+    
     async def detect_objects(self, image: np.ndarray) -> dict:
         """Run object detection on image"""
         if not self.model:
@@ -43,7 +83,7 @@ class SimpleDetectionService:
             }
         
         try:
-            # Run inference
+            # Run YOLO inference
             results = self.model(image)
             
             detections = []
@@ -70,14 +110,24 @@ class SimpleDetectionService:
                             }
                             detections.append(detection)
             
+            # Run fire detection
+            fire_result = self.detect_fire_by_color(image)
+            
             # Count persons and check for emergencies
             person_count = len([d for d in detections if d["class"] == "person"])
             
-            # Simple emergency detection logic
+            # Emergency detection logic
             emergency_detected = False
             emergency_type = None
             
-            if person_count > 5:
+            # Check for fire
+            fire_detected = fire_result["detected"]
+            if fire_detected:
+                emergency_detected = True
+                emergency_type = "fire"
+            
+            # Check for crowd
+            elif person_count > 5:
                 emergency_detected = True
                 emergency_type = "crowd_density"
             
@@ -101,9 +151,9 @@ class SimpleDetectionService:
                 },
                 "enhanced_multimodal": {
                     "detections": {
-                        "stampede": {"detected": emergency_detected and emergency_type == "crowd_density", "confidence": 0.8 if emergency_detected else 0.0},
+                        "stampede": {"detected": emergency_detected and emergency_type == "crowd_density", "confidence": 0.8 if emergency_detected and emergency_type == "crowd_density" else 0.0},
                         "medical_emergency": {"detected": False, "confidence": 0.0},
-                        "fire": {"detected": False, "confidence": 0.0},
+                        "fire": {"detected": fire_detected, "confidence": fire_result["confidence"]},
                         "smoke": {"detected": False, "confidence": 0.0},
                         "fallen": {"detected": False, "confidence": 0.0},
                         "running": {"detected": False, "confidence": 0.0}
