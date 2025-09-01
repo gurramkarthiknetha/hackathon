@@ -14,7 +14,9 @@ import {
 
 const CameraManager = ({ onCameraSelect, selectedCamera }) => {
   const [cameras, setCameras] = useState([]);
+  const [systemCameras, setSystemCameras] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [detectingSystemCameras, setDetectingSystemCameras] = useState(false);
   const [showAddCamera, setShowAddCamera] = useState(false);
   const [cameraType, setCameraType] = useState("droidcam"); // "droidcam", "ipwebcam", or "camo-studio"
   const [isConfiguring, setIsConfiguring] = useState(false);
@@ -33,6 +35,7 @@ const CameraManager = ({ onCameraSelect, selectedCamera }) => {
 
   useEffect(() => {
     fetchCameras();
+    detectSystemCameras();
   }, []);
 
   const fetchCameras = async () => {
@@ -50,6 +53,32 @@ const CameraManager = ({ onCameraSelect, selectedCamera }) => {
       console.error('Error fetching cameras:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const detectSystemCameras = async () => {
+    setDetectingSystemCameras(true);
+    try {
+      if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
+        
+        const systemCams = videoDevices.map((device, index) => ({
+          id: `system_${device.deviceId || index}`,
+          name: device.label || `System Camera ${index + 1}`,
+          type: 'system',
+          deviceId: device.deviceId,
+          status: 'available',
+          location: 'Local System',
+          zone: 'System'
+        }));
+        
+        setSystemCameras(systemCams);
+      }
+    } catch (error) {
+      console.error('Error detecting system cameras:', error);
+    } finally {
+      setDetectingSystemCameras(false);
     }
   };
 
@@ -294,11 +323,14 @@ const CameraManager = ({ onCameraSelect, selectedCamera }) => {
           </div>
           <div className="flex items-center space-x-2">
             <button
-              onClick={fetchCameras}
-              disabled={loading}
+              onClick={() => {
+                fetchCameras();
+                detectSystemCameras();
+              }}
+              disabled={loading || detectingSystemCameras}
               className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors disabled:opacity-50"
             >
-              <RefreshCw className={`h-4 w-4 text-white ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-4 w-4 text-white ${(loading || detectingSystemCameras) ? 'animate-spin' : ''}`} />
             </button>
             <button
               onClick={() => setShowAddCamera(true)}
@@ -311,6 +343,44 @@ const CameraManager = ({ onCameraSelect, selectedCamera }) => {
       </div>
       
       <div className="p-4 space-y-2 max-h-96 overflow-y-auto">
+        {/* System Cameras */}
+        {systemCameras.map((camera) => (
+          <motion.div
+            key={camera.id}
+            className={`p-3 rounded-lg border transition-all duration-200 cursor-pointer ${
+              selectedCamera === camera.id
+                ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white border-green-400'
+                : 'bg-gray-800 hover:bg-gray-700 text-gray-300 border-gray-700'
+            }`}
+            onClick={() => onCameraSelect(camera.id)}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <Camera className="h-5 w-5" />
+                <div>
+                  <p className="font-medium">{camera.name}</p>
+                  <p className="text-xs opacity-75">{camera.location}</p>
+                  <p className="text-xs opacity-60">{camera.zone}</p>
+                  <p className="text-xs font-medium text-green-400">
+                    Available
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                {/* Status Indicator */}
+                <div className="flex items-center space-x-1">
+                  <Wifi className="h-4 w-4 text-green-400" />
+                  <div className="w-2 h-2 rounded-full bg-green-400"></div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        ))}
+        
+        {/* Remote Cameras */}
         {cameras.map((camera) => (
           <motion.div
             key={camera.id}
@@ -375,11 +445,18 @@ const CameraManager = ({ onCameraSelect, selectedCamera }) => {
           </motion.div>
         ))}
         
-        {cameras.length === 0 && !loading && (
+        {cameras.length === 0 && systemCameras.length === 0 && !loading && !detectingSystemCameras && (
           <div className="text-center py-8">
             <Camera className="h-12 w-12 text-gray-600 mx-auto mb-2" />
             <p className="text-gray-400">No cameras available</p>
-            <p className="text-gray-500 text-sm">Add a camera to get started</p>
+            <p className="text-gray-500 text-sm">Add a camera to get started or allow camera access</p>
+          </div>
+        )}
+        
+        {(loading || detectingSystemCameras) && (
+          <div className="text-center py-8">
+            <RefreshCw className="h-8 w-8 text-gray-400 mx-auto mb-2 animate-spin" />
+            <p className="text-gray-400">Detecting cameras...</p>
           </div>
         )}
       </div>

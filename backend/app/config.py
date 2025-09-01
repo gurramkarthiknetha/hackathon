@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     cors_origins: List[str] = [
         "http://localhost:5173",
         "http://10.100.14.125:5173",
+        "http://10.100.18.5:5173",
         "https://aieventmonitor.vercel.app"
     ]
     

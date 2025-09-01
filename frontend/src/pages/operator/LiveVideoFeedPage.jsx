@@ -10,7 +10,7 @@ const LiveVideoFeedPage = () => {
   const [selectedIncident, setSelectedIncident] = useState(null);
   const [fullscreen, setFullscreen] = useState(false);
   const [audioEnabled, setAudioEnabled] = useState(true);
-  const [selectedCamera, setSelectedCamera] = useState("cam_east_01");
+  const [selectedCamera, setSelectedCamera] = useState(null);
 
   // Mock data for maximum accuracy levels - replace with real data from your backend
   const maxAccuracyLevels = {

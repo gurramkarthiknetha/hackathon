@@ -9,7 +9,7 @@ import numpy as np
 import cv2
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
-from app.deps import get_db, require_any_role
+from app.deps import get_database, require_any_role
 from app.ml.inference import InferenceService
 from app.ml.enhanced_detection import get_enhanced_detector
 from app.middleware.security import incident_limiter
@@ -25,7 +25,7 @@ limiter = Limiter(key_func=get_remote_address)
 async def detect_objects(
     request: Request,
     file: UploadFile = File(...),
-    db: AsyncIOMotorDatabase = Depends(get_db),
+    db: AsyncIOMotorDatabase = Depends(get_database),
     current_user = Depends(require_any_role)
 ):
     """Object detection endpoint"""
@@ -53,7 +53,7 @@ async def detect_objects(
 async def enhanced_multimodal_analysis(
     request: Request,
     file: UploadFile = File(...),
-    db: AsyncIOMotorDatabase = Depends(get_db),
+    db: AsyncIOMotorDatabase = Depends(get_database),
     current_user = Depends(require_any_role)
 ):
     """Enhanced multi-modal detection analysis"""
@@ -76,7 +76,7 @@ async def enhanced_multimodal_analysis(
 async def comprehensive_analysis(
     request: Request,
     file: UploadFile = File(...),
-    db: AsyncIOMotorDatabase = Depends(get_db),
+    db: AsyncIOMotorDatabase = Depends(get_database),
     current_user = Depends(require_any_role)
 ):
     """Comprehensive analysis combining all detection methods"""

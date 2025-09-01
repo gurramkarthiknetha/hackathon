@@ -180,14 +180,6 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
               ))}
             </ul>
           </nav>
-
-          {/* Footer */}
-          <div className="p-4 border-t border-gray-800">
-            <div className="text-center text-xs text-gray-400">
-              <p>Hackathon Dashboard v1.0</p>
-              <p className="mt-1">© 2024 Your Team</p>
-            </div>
-          </div>
         </div>
       </motion.aside>
     </>

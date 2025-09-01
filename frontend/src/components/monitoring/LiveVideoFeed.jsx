@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 const LiveVideoFeed = ({ selectedIncident, currentCamera: propCurrentCamera }) => {
   console.log('LiveVideoFeed rendering with props:', { selectedIncident, propCurrentCamera });
 
-  const [currentCamera, setCurrentCamera] = useState(propCurrentCamera || "iphone_camera");
+  const [currentCamera, setCurrentCamera] = useState(propCurrentCamera);
   const [cameras, setCameras] = useState([]);
   const [videoError, setVideoError] = useState(null);
   const [isStartingCamera, setIsStartingCamera] = useState(false);
@@ -13,23 +13,39 @@ const LiveVideoFeed = ({ selectedIncident, currentCamera: propCurrentCamera }) =
   const [aiStatus, setAiStatus] = useState('idle');
   const videoRef = useRef(null);
 
+  // Debug logging
+  console.log('LiveVideoFeed state:', { 
+    currentCamera, 
+    isUsingDeviceCamera, 
+    hasStream: !!stream,
+    videoRef: !!videoRef.current 
+  });
+
   // Video streaming service URLs
   const VIDEO_SERVICE_URL = import.meta.env.VITE_VIDEO_SERVICE_URL || 'http://localhost:5001';
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
   // iPhone camera functions
-  const startDeviceCamera = async () => {
+  const startDeviceCamera = async (deviceId = null) => {
     try {
       setIsStartingCamera(true);
       setVideoError(null);
 
-      // Request camera access with iPhone-optimized constraints
+      // Build video constraints
+      const videoConstraints = {
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
+      };
+
+      // If specific device ID is provided, use it; otherwise use default camera
+      if (deviceId) {
+        videoConstraints.deviceId = { exact: deviceId };
+      } else {
+        videoConstraints.facingMode = 'environment'; // Use back camera by default
+      }
+
       const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: 'environment', // Use back camera by default
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        },
+        video: videoConstraints,
         audio: false
       });
 
@@ -38,11 +54,15 @@ const LiveVideoFeed = ({ selectedIncident, currentCamera: propCurrentCamera }) =
 
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
+        console.log('Video element srcObject set:', videoRef.current.srcObject);
       }
 
-      console.log('iPhone camera started successfully');
+      console.log('System camera started successfully', { 
+        streamActive: mediaStream.active,
+        tracks: mediaStream.getTracks().length 
+      });
     } catch (error) {
-      console.error('Error accessing iPhone camera:', error);
+      console.error('Error accessing system camera:', error);
       setVideoError(`Camera access denied: ${error.message}`);
     } finally {
       setIsStartingCamera(false);
@@ -86,9 +106,56 @@ const LiveVideoFeed = ({ selectedIncident, currentCamera: propCurrentCamera }) =
     }
   };
 
-  // Fetch detection results from AI service
+  // Capture frame and send to ML model for analysis
+  const captureAndAnalyzeFrame = async () => {
+    if (!videoRef.current || !stream) return;
+
+    try {
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      canvas.width = videoRef.current.videoWidth;
+      canvas.height = videoRef.current.videoHeight;
+      
+      context.drawImage(videoRef.current, 0, 0);
+      
+      // Convert to blob
+      canvas.toBlob(async (blob) => {
+        if (!blob) return;
+        
+        const formData = new FormData();
+        formData.append('file', blob, 'frame.jpg');
+        
+        try {
+          setAiStatus('analyzing');
+          const response = await fetch(`${API_URL}/ml/analyze/enhanced`, {
+            method: 'POST',
+            body: formData,
+            credentials: 'include'
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            setDetectionResults(data);
+            setAiStatus('active');
+            console.log('Detection results:', data);
+          } else {
+            setAiStatus('error');
+          }
+        } catch (error) {
+          console.error('Error analyzing frame:', error);
+          setAiStatus('error');
+        }
+      }, 'image/jpeg', 0.8);
+      
+    } catch (error) {
+      console.error('Error capturing frame:', error);
+      setAiStatus('error');
+    }
+  };
+
+  // Fetch detection results from AI service (for remote cameras)
   const fetchDetectionResults = async (cameraId) => {
-    if (cameraId === 'iphone_camera') return;
+    if (cameraId === 'iphone_camera' || (cameraId && cameraId.startsWith('system_'))) return;
     
     try {
       const response = await fetch(`${VIDEO_SERVICE_URL}/api/cameras/${cameraId}/detections`);
@@ -112,54 +179,130 @@ const LiveVideoFeed = ({ selectedIncident, currentCamera: propCurrentCamera }) =
     }
   }, [propCurrentCamera]);
 
-  // Fetch cameras on mount and add iPhone camera option
+  // Ensure video element gets stream when both are available
   useEffect(() => {
-    const fetchCameras = async () => {
+    if (stream && videoRef.current && !videoRef.current.srcObject) {
+      console.log('Setting srcObject on video element');
+      videoRef.current.srcObject = stream;
+    }
+  }, [stream]);
+
+  // Start AI analysis when camera is active
+  useEffect(() => {
+    let analysisInterval;
+    
+    if (stream && videoRef.current && videoRef.current.videoWidth > 0) {
+      console.log('Starting AI analysis interval');
+      setAiStatus('active');
+      
+      // Analyze frame every 2 seconds
+      analysisInterval = setInterval(() => {
+        captureAndAnalyzeFrame();
+      }, 2000);
+    }
+    
+    return () => {
+      if (analysisInterval) {
+        clearInterval(analysisInterval);
+      }
+    };
+  }, [stream, videoRef.current?.videoWidth]);
+
+  // Fetch cameras on mount and detect system cameras
+  useEffect(() => {
+    const fetchAllCameras = async () => {
       try {
         console.log('Fetching cameras...');
-        const response = await fetch(`${API_URL}/cameras`, {
-          credentials: 'include'
-        });
-        const data = await response.json();
-        console.log('Cameras response:', data);
+        
+        // Detect system cameras
+        let systemCameras = [];
+        if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+          const devices = await navigator.mediaDevices.enumerateDevices();
+          const videoDevices = devices.filter(device => device.kind === 'videoinput');
+          
+          systemCameras = videoDevices.map((device, index) => ({
+            id: `system_${device.deviceId || index}`,
+            name: device.label || `System Camera ${index + 1}`,
+            type: 'system',
+            deviceId: device.deviceId,
+            status: 'available',
+            location: 'Local System',
+            source: 'device'
+          }));
+        }
+        
+        // Add fallback iPhone camera if no system cameras detected
+        if (systemCameras.length === 0) {
+          systemCameras = [{
+            id: 'iphone_camera',
+            name: 'iPhone Camera',
+            status: 'available',
+            location: 'Device Camera',
+            source: 'device'
+          }];
+        }
+        
+        // Auto-select first system camera if no current camera is set
+        if (!propCurrentCamera && systemCameras.length > 0) {
+          setCurrentCamera(systemCameras[0].id);
+        }
+        
+        // Fetch remote cameras
+        try {
+          const response = await fetch(`${API_URL}/cameras`, {
+            credentials: 'include'
+          });
+          const data = await response.json();
+          console.log('Remote cameras response:', data);
 
-        // Add iPhone camera as an option
-        const iPhoneCamera = {
-          id: 'iphone_camera',
-          name: 'iPhone Camera',
-          status: 'available',
-          location: 'Device Camera',
-          source: 'device'
-        };
-
-        if (data.success) {
-          setCameras([iPhoneCamera, ...data.data]);
-        } else {
-          // If API fails, still show iPhone camera option
-          setCameras([iPhoneCamera]);
-          setVideoError(`Failed to fetch remote cameras: ${data.message}`);
+          if (data.success) {
+            setCameras([...systemCameras, ...data.data]);
+          } else {
+            setCameras(systemCameras);
+            // Only show error if no system cameras are available
+            if (systemCameras.length === 0) {
+              setVideoError(`Failed to fetch remote cameras: ${data.message}`);
+            }
+          }
+          
+          // Auto-select first system camera if no current camera is set
+          if (!propCurrentCamera && systemCameras.length > 0) {
+            setCurrentCamera(systemCameras[0].id);
+          }
+        } catch (error) {
+          console.error('Error fetching remote cameras:', error);
+          setCameras(systemCameras);
+          // Only show error if no system cameras are available
+          if (systemCameras.length === 0) {
+            setVideoError(`Network error: ${error.message}`);
+          }
+          
+          // Auto-select first system camera if no current camera is set
+          if (!propCurrentCamera && systemCameras.length > 0) {
+            setCurrentCamera(systemCameras[0].id);
+          }
         }
       } catch (error) {
-        console.error('Error fetching cameras:', error);
-        // Fallback to iPhone camera only
-        const iPhoneCamera = {
+        console.error('Error detecting cameras:', error);
+        // Ultimate fallback
+        const fallbackCamera = {
           id: 'iphone_camera',
           name: 'iPhone Camera',
           status: 'available',
           location: 'Device Camera',
           source: 'device'
         };
-        setCameras([iPhoneCamera]);
-        setVideoError(`Network error: ${error.message}`);
+        setCameras([fallbackCamera]);
+        setVideoError(`Camera detection failed: ${error.message}`);
       }
     };
 
-    fetchCameras();
+    fetchAllCameras();
   }, [API_URL]);
 
   // Fetch detection results periodically for active cameras
   useEffect(() => {
-    if (currentCamera && currentCamera !== 'iphone_camera') {
+    if (currentCamera && currentCamera !== 'iphone_camera' && !(currentCamera && currentCamera.startsWith('system_'))) {
       const interval = setInterval(() => {
         fetchDetectionResults(currentCamera);
       }, 2000); // Update every 2 seconds
@@ -175,15 +318,21 @@ const LiveVideoFeed = ({ selectedIncident, currentCamera: propCurrentCamera }) =
     };
   }, []);
 
-  // Start camera function - handles both iPhone camera and remote cameras
+  // Start camera function - handles both system cameras and remote cameras
   const startCamera = async (cameraId) => {
     try {
       setIsStartingCamera(true);
       console.log(`Starting camera: ${cameraId}`);
 
-      // Handle iPhone camera
-      if (cameraId === 'iphone_camera') {
-        await startDeviceCamera();
+      // Handle system cameras (including iPhone camera)
+      if (cameraId === 'iphone_camera' || (cameraId && cameraId.startsWith('system_'))) {
+        // Extract device ID for system cameras
+        let deviceId = null;
+        if (cameraId && cameraId.startsWith('system_')) {
+          const systemCamera = cameras.find(cam => cam.id === cameraId);
+          deviceId = systemCamera?.deviceId;
+        }
+        await startDeviceCamera(deviceId);
         return;
       }
 
@@ -208,15 +357,9 @@ const LiveVideoFeed = ({ selectedIncident, currentCamera: propCurrentCamera }) =
         });
         const camerasData = await camerasResponse.json();
         if (camerasData.success) {
-          // Keep iPhone camera in the list
-          const iPhoneCamera = {
-            id: 'iphone_camera',
-            name: 'iPhone Camera',
-            status: 'available',
-            location: 'Device Camera',
-            source: 'device'
-          };
-          setCameras([iPhoneCamera, ...camerasData.data]);
+          // Keep system cameras in the list
+          const systemCameras = cameras.filter(cam => cam.source === 'device');
+          setCameras([...systemCameras, ...camerasData.data]);
         }
         setVideoError(null);
       } else {
@@ -234,10 +377,10 @@ const LiveVideoFeed = ({ selectedIncident, currentCamera: propCurrentCamera }) =
 
   // AI Detection Status Component
   const AIDetectionStatus = () => {
-    if (currentCamera === 'iphone_camera') {
+    if (currentCamera === 'iphone_camera' || (currentCamera && currentCamera.startsWith('system_'))) {
       return (
         <div className="absolute top-4 left-4 bg-blue-500/20 px-3 py-2 rounded">
-          <span className="text-blue-400 text-sm font-medium">DEVICE CAMERA - AI Ready</span>
+          <span className="text-blue-400 text-sm font-medium">SYSTEM CAMERA - AI Ready</span>
         </div>
       );
     }
@@ -264,7 +407,7 @@ const LiveVideoFeed = ({ selectedIncident, currentCamera: propCurrentCamera }) =
 
   // AI Detection Results Component
   const AIDetectionResults = () => {
-    if (!detectionResults || currentCamera === 'iphone_camera') return null;
+    if (!detectionResults || currentCamera === 'iphone_camera' || (currentCamera && currentCamera.startsWith('system_'))) return null;
 
     const detections = detectionResults.detections || {};
     const activeDetections = Object.entries(detections).filter(([_, detection]) => detection.detected);
@@ -321,8 +464,8 @@ const LiveVideoFeed = ({ selectedIncident, currentCamera: propCurrentCamera }) =
                 value={currentCamera}
                 onChange={(e) => {
                   const newCamera = e.target.value;
-                  // Stop current device camera if switching away from iPhone camera
-                  if (currentCamera === 'iphone_camera' && isUsingDeviceCamera) {
+                  // Stop current device camera if switching away from system camera
+                  if ((currentCamera === 'iphone_camera' || (currentCamera && currentCamera.startsWith('system_'))) && isUsingDeviceCamera) {
                     stopDeviceCamera();
                   }
                   setCurrentCamera(newCamera);
@@ -355,7 +498,7 @@ const LiveVideoFeed = ({ selectedIncident, currentCamera: propCurrentCamera }) =
               Reload Page
             </button>
           </div>
-        ) : currentCamera === 'iphone_camera' && isUsingDeviceCamera ? (
+        ) : stream ? (
           <div className="w-full h-full relative">
             <video
               ref={videoRef}
@@ -364,11 +507,28 @@ const LiveVideoFeed = ({ selectedIncident, currentCamera: propCurrentCamera }) =
               muted
               className="w-full h-full object-cover"
               onLoadedMetadata={() => setVideoError(null)}
-              onError={() => setVideoError('Failed to load iPhone camera stream')}
+              onError={() => setVideoError('Failed to load camera stream')}
             />
 
-            {/* AI Status for iPhone Camera */}
+            {/* AI Status for System Camera */}
             <AIDetectionStatus />
+            
+            {/* Detection Results Overlay */}
+            {detectionResults && detectionResults.detections && (
+              <div className="absolute top-4 left-4 bg-black bg-opacity-70 text-white p-3 rounded-lg">
+                <h4 className="font-semibold mb-2">AI Detection Results</h4>
+                <p>Objects: {detectionResults.detections.length}</p>
+                <p>Persons: {detectionResults.person_count || 0}</p>
+                {detectionResults.emergency_detected && (
+                  <p className="text-red-400 font-bold">⚠️ {detectionResults.emergency_type}</p>
+                )}
+                <div className="text-xs mt-2">
+                  {detectionResults.detected_objects?.slice(0, 3).map((obj, i) => (
+                    <span key={i} className="bg-blue-600 px-2 py-1 rounded mr-1">{obj}</span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         ) : currentCameraInfo?.status === 'active' && currentCamera !== 'iphone_camera' ? (
           <div className="w-full h-full relative">
@@ -387,30 +547,24 @@ const LiveVideoFeed = ({ selectedIncident, currentCamera: propCurrentCamera }) =
             <AIDetectionResults />
           </div>
         ) : (
-          <div className="text-center">
+          <div className="text-center p-8">
             <h3 className="text-lg font-semibold text-gray-400 mb-2">
-              {currentCamera === 'iphone_camera' ? 'iPhone Camera Ready' : 'Camera Inactive'}
+              System Camera Ready
             </h3>
-            <p className="text-gray-500">
-              {currentCamera === 'iphone_camera'
-                ? 'Click "Start Camera" to access your iPhone camera'
-                : 'Please start the camera to view the feed'
-              }
+            <p className="text-gray-500 mb-4">
+              Click "Start Camera" to access your system camera
             </p>
-            {currentCameraInfo && (
-              <div className="mt-4">
-                <p className="text-sm text-gray-400">Camera ID: {currentCamera}</p>
-                <p className="text-sm text-gray-400">Location: {currentCameraInfo.location}</p>
-                <button
-                  onClick={() => startCamera(currentCamera)}
-                  disabled={isStartingCamera}
-                  className="mt-4 px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded transition-colors"
-                >
-                  {isStartingCamera ? 'Starting...' :
-                   currentCamera === 'iphone_camera' ? 'Start iPhone Camera' : 'Start Camera'}
-                </button>
-              </div>
-            )}
+            
+            {currentCamera && <p className="text-sm text-gray-400 mb-2">Camera ID: {currentCamera}</p>}
+            {currentCameraInfo && <p className="text-sm text-gray-400 mb-4">Location: {currentCameraInfo.location}</p>}
+            
+            <button
+              onClick={() => startCamera(currentCamera || 'iphone_camera')}
+              disabled={isStartingCamera}
+              className="px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white font-semibold rounded-lg transition-colors shadow-lg"
+            >
+              {isStartingCamera ? 'Starting Camera...' : 'Start System Camera'}
+            </button>
           </div>
         )}
       </div>

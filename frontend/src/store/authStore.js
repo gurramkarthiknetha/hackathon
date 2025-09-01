@@ -232,13 +232,29 @@ export const useAuthStore = create((set, get) => ({
 				error: null
 			});
 		} catch (error) {
-			// Don't show error toast for auth check failures
-			set({
-				user: null,
-				isAuthenticated: false,
-				isCheckingAuth: false,
-				error: null
-			});
+			// In development mode, create a mock user for testing
+			if (import.meta.env.DEV) {
+				set({
+					user: {
+						id: 'dev-user',
+						name: 'Development User',
+						email: 'dev@example.com',
+						role: 'operator',
+						isVerified: true
+					},
+					isAuthenticated: true,
+					isCheckingAuth: false,
+					error: null
+				});
+				console.log('Using development mock user');
+			} else {
+				set({
+					user: null,
+					isAuthenticated: false,
+					isCheckingAuth: false,
+					error: null
+				});
+			}
 		}
 	},
 	forgotPassword: async (email) => {

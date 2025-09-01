@@ -10,6 +10,10 @@ RUN apt-get update && apt-get install -y \
     g++ \
     libffi-dev \
     libssl-dev \
+    portaudio19-dev \
+    libasound2-dev \
+    libsndfile1-dev \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching

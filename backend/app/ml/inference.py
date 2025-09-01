@@ -50,15 +50,27 @@ class ModelManager:
         
         try:
             if config['type'] == 'ultralytics':
-                model = YOLO(config['path'])
+                # Load YOLOv8 model
+                model_path = Path(__file__).parent / config['path']
+                if not model_path.exists():
+                    # Use the existing yolov8n.pt model
+                    model_path = Path(__file__).parent / 'models/yolov8n.pt'
+                model = YOLO(str(model_path))
                 self.models[model_name] = model
-                print(f"✅ Loaded Ultralytics model: {model_name}")
+                print(f"✅ Loaded YOLO model: {model_name}")
+                return model
                 
             elif config['type'] == 'tensorflow':
-                model = tf.keras.models.load_model(config['path'])
-                self.models[model_name] = model
-                print(f"✅ Loaded TensorFlow model: {model_name}")
-                
+                model_path = Path(__file__).parent / config['path']
+                if model_path.exists():
+                    model = tf.keras.models.load_model(str(model_path))
+                    self.models[model_name] = model
+                    print(f"✅ Loaded TensorFlow model: {model_name}")
+                    return model
+                else:
+                    print(f"⚠️ TensorFlow model not found: {model_path}")
+                    return None
+                    
             elif config['type'] == 'mediapipe':
                 if config['model'] == 'pose':
                     model = mp.solutions.pose.Pose(
@@ -69,14 +81,11 @@ class ModelManager:
                     )
                     self.models[model_name] = model
                     print(f"✅ Loaded MediaPipe model: {model_name}")
-            
-            return self.models[model_name]
-            
+                    return model
+                    
         except Exception as e:
             print(f"❌ Failed to load model {model_name}: {e}")
-            # Return mock model for development
-            self.models[model_name] = MockModel(model_name)
-            return self.models[model_name]
+            return None
     
     async def warmup_models(self):
         """Preload all models for faster inference"""

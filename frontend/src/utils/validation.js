@@ -22,17 +22,27 @@ export const validatePassword = (password) => {
 		return { isValid: false, message: "Password is required" };
 	}
 	
-	if (password.length < 6) {
-		return { isValid: false, message: "Password must be at least 6 characters long" };
+	if (password.length < 8) {
+		return { isValid: false, message: "Password must be at least 8 characters long" };
 	}
 	
-	if (password.length > 128) {
+	if (password.length > 100) {
 		return { isValid: false, message: "Password is too long" };
 	}
 	
-	// Check for at least one letter and one number
-	if (!/(?=.*[a-zA-Z])(?=.*\d)/.test(password)) {
-		return { isValid: false, message: "Password must contain at least one letter and one number" };
+	// Check for uppercase letter
+	if (!/[A-Z]/.test(password)) {
+		return { isValid: false, message: "Password must contain at least one uppercase letter" };
+	}
+	
+	// Check for lowercase letter
+	if (!/[a-z]/.test(password)) {
+		return { isValid: false, message: "Password must contain at least one lowercase letter" };
+	}
+	
+	// Check for digit
+	if (!/\d/.test(password)) {
+		return { isValid: false, message: "Password must contain at least one digit" };
 	}
 	
 	return { isValid: true };
