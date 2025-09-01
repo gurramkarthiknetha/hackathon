@@ -4,7 +4,7 @@ Monitoring routes for incidents, zones, and dashboard functionality.
 
 from typing import List, Optional
 from datetime import datetime, timedelta
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status, Request
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from bson import ObjectId
 import logging
@@ -26,9 +26,10 @@ logger = logging.getLogger(__name__)
 @router.get("/incidents", response_model=IncidentResponse)
 @incident_limiter.limit("100/60second")
 async def get_incidents(
+    request: Request,
     query: IncidentQuery = Depends(),
     db: AsyncIOMotorDatabase = Depends(get_database),
-    current_user: User = Depends(get_current_user)
+    current_user: UserResponse = Depends(get_current_user)
 ):
     """Get incidents with filtering and pagination"""
     try:
@@ -80,9 +81,10 @@ async def get_incidents(
 @router.get("/incidents/{incident_id}", response_model=Incident)
 @incident_limiter.limit("100/60second")
 async def get_incident(
+    request: Request,
     incident_id: str,
     db: AsyncIOMotorDatabase = Depends(get_database),
-    current_user: User = Depends(get_current_user)
+    current_user: UserResponse = Depends(get_current_user)
 ):
     """Get incident by ID"""
     try:
@@ -105,9 +107,10 @@ async def get_incident(
 @router.post("/incidents", response_model=Incident, status_code=status.HTTP_201_CREATED)
 @incident_limiter.limit("50/60second")
 async def create_incident(
+    request: Request,
     incident_data: IncidentCreate,
     db: AsyncIOMotorDatabase = Depends(get_database),
-    current_user: User = Depends(require_role(["operator", "admin"]))
+    current_user: UserResponse = Depends(require_role(["operator", "admin"]))
 ):
     """Create new incident"""
     try:
@@ -142,10 +145,11 @@ async def create_incident(
 @router.put("/incidents/{incident_id}", response_model=Incident)
 @incident_limiter.limit("50/60second")
 async def update_incident(
+    request: Request,
     incident_id: str,
     update_data: IncidentUpdate,
     db: AsyncIOMotorDatabase = Depends(get_database),
-    current_user: User = Depends(get_current_user)
+    current_user: UserResponse = Depends(get_current_user)
 ):
     """Update incident"""
     try:
@@ -214,9 +218,10 @@ async def update_incident(
 @router.get("/zones", response_model=List[Zone])
 @incident_limiter.limit("100/60second")
 async def get_zones(
+    request: Request,
     query: ZoneQuery = Depends(),
     db: AsyncIOMotorDatabase = Depends(get_database),
-    current_user: User = Depends(get_current_user)
+    current_user: UserResponse = Depends(get_current_user)
 ):
     """Get all zones with optional filtering"""
     try:
@@ -242,9 +247,10 @@ async def get_zones(
 @router.get("/zones/{zone_id}", response_model=Zone)
 @incident_limiter.limit("100/60second")
 async def get_zone(
+    request: Request,
     zone_id: str,
     db: AsyncIOMotorDatabase = Depends(get_database),
-    current_user: User = Depends(get_current_user)
+    current_user: UserResponse = Depends(get_current_user)
 ):
     """Get zone by ID or name"""
     try:
@@ -269,9 +275,10 @@ async def get_zone(
 @router.post("/zones", response_model=Zone, status_code=status.HTTP_201_CREATED)
 @incident_limiter.limit("20/60second")
 async def create_zone(
+    request: Request,
     zone_data: ZoneCreate,
     db: AsyncIOMotorDatabase = Depends(get_database),
-    current_user: User = Depends(require_role(["admin"]))
+    current_user: UserResponse = Depends(require_role(["admin"]))
 ):
     """Create new zone (admin only)"""
     try:
@@ -305,10 +312,11 @@ async def create_zone(
 @router.put("/zones/{zone_id}", response_model=Zone)
 @incident_limiter.limit("50/60second")
 async def update_zone(
+    request: Request,
     zone_id: str,
     update_data: ZoneUpdate,
     db: AsyncIOMotorDatabase = Depends(get_database),
-    current_user: User = Depends(require_role(["operator", "admin"]))
+    current_user: UserResponse = Depends(require_role(["operator", "admin"]))
 ):
     """Update zone"""
     try:
@@ -348,8 +356,9 @@ async def update_zone(
 @router.get("/dashboard/stats", response_model=DashboardStats)
 @incident_limiter.limit("50/60second")
 async def get_dashboard_stats(
+    request: Request,
     db: AsyncIOMotorDatabase = Depends(get_database),
-    current_user: User = Depends(get_current_user)
+    current_user: UserResponse = Depends(get_current_user)
 ):
     """Get dashboard statistics"""
     try:
@@ -434,9 +443,10 @@ async def get_dashboard_stats(
 @router.post("/alerts", status_code=status.HTTP_201_CREATED)
 @incident_limiter.limit("20/60second")
 async def create_alert(
+    request: Request,
     alert_data: AlertCreate,
     db: AsyncIOMotorDatabase = Depends(get_database),
-    current_user: User = Depends(require_role(["operator", "admin"]))
+    current_user: UserResponse = Depends(require_role(["operator", "admin"]))
 ):
     """Create and broadcast alert"""
     try:

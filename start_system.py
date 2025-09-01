@@ -37,12 +37,16 @@ class SystemManager:
             print(f"❌ Node.js not found: {e}")
             return False
         
-        # Check npm
+        # Check npm using WSL
         try:
-            result = subprocess.run(['npm', '--version'], capture_output=True, text=True)
-            print(f"✅ npm: {result.stdout.strip()}")
+            result = subprocess.run(['wsl', 'npm', '--version'], capture_output=True, text=True)
+            if result.returncode == 0:
+                print(f"✅ npm (WSL): {result.stdout.strip()}")
+            else:
+                print(f"❌ npm not found in WSL: {result.stderr}")
+                return False
         except Exception as e:
-            print(f"❌ npm not found: {e}")
+            print(f"❌ WSL npm check failed: {e}")
             return False
         
         return True
@@ -70,14 +74,14 @@ class SystemManager:
             return False
     
     def install_frontend_deps(self):
-        """Install Node.js frontend dependencies"""
+        """Install Node.js frontend dependencies using WSL"""
         print("📦 Installing frontend dependencies...")
         
         frontend_dir = Path(__file__).parent / "frontend"
         
         try:
             result = subprocess.run([
-                'npm', 'install'
+                'wsl', 'npm', 'install'
             ], cwd=frontend_dir, capture_output=True, text=True)
             
             if result.returncode == 0:
@@ -121,9 +125,9 @@ class SystemManager:
         frontend_dir = Path(__file__).parent / "frontend"
         
         try:
-            # Start React dev server
+            # Start React dev server using WSL
             self.frontend_process = subprocess.Popen([
-                'npm', 'run', 'dev'
+                'wsl', 'npm', 'run', 'dev'
             ], cwd=frontend_dir)
             
             print("✅ React frontend started on http://localhost:5173")

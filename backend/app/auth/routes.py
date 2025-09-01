@@ -36,62 +36,73 @@ async def signup(
 ):
     """Register a new user with email verification."""
     
-    # Check if user already exists
-    existing_user = await AuthService.get_user_by_email(db, user_data.email)
-    
-    if existing_user:
-        if existing_user.get("isVerified"):
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="User already exists and is verified. Please try logging in instead."
-            )
-        else:
-            # User exists but not verified - allow re-registration
-            user_dict = user_data.dict()
-            user_dict["_id"] = existing_user["_id"]
-            await AuthService.update_user(db, existing_user["_id"], user_dict)
-            user = await AuthService.get_user_by_id(db, existing_user["_id"])
-            is_reregistration = True
-    else:
-        # Create new user
-        user_dict = user_data.dict()
-        user = await AuthService.create_user(db, user_dict)
-        is_reregistration = False
-    
-    # Generate JWT token
-    access_token = AuthService.create_access_token(
-        data={"sub": user["_id"], "role": user["role"]}
-    )
-    
-    # Set HTTP-only cookie
-    response.set_cookie(
-        key="token",
-        value=access_token,
-        httponly=settings.cookie_httponly,
-        secure=settings.cookie_secure,
-        samesite=settings.cookie_samesite,
-        max_age=settings.jwt_expires_in
-    )
-    
-    # Send verification email
     try:
-        await EmailService.send_verification_email(
-            user["email"], 
-            user["verificationToken"]
+        # Log the incoming request data for debugging
+        print(f"🔍 Signup request data: {user_data.dict()}")
+        
+        # Check if user already exists
+        existing_user = await AuthService.get_user_by_email(db, user_data.email)
+        
+        if existing_user:
+            if existing_user.get("isVerified"):
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="User already exists and is verified. Please try logging in instead."
+                )
+            else:
+                # User exists but not verified - allow re-registration
+                user_dict = user_data.dict()
+                user_dict["_id"] = existing_user["_id"]
+                await AuthService.update_user(db, existing_user["_id"], user_dict)
+                user = await AuthService.get_user_by_id(db, existing_user["_id"])
+                is_reregistration = True
+        else:
+            # Create new user
+            user_dict = user_data.dict()
+            user = await AuthService.create_user(db, user_dict)
+            is_reregistration = False
+        
+        # Generate JWT token
+        access_token = AuthService.create_access_token(
+            data={"sub": user["_id"], "role": user["role"]}
         )
+        
+        # Set HTTP-only cookie
+        response.set_cookie(
+            key="token",
+            value=access_token,
+            httponly=settings.cookie_httponly,
+            secure=settings.cookie_secure,
+            samesite=settings.cookie_samesite,
+            max_age=settings.jwt_expires_in
+        )
+        
+        # Send verification email
+        try:
+            await EmailService.send_verification_email(
+                user["email"], 
+                user["verificationToken"]
+            )
+        except Exception as e:
+            print(f"Failed to send verification email: {e}")
+        
+        message = (
+            "Account updated successfully. A new verification code has been sent to your email."
+            if is_reregistration
+            else "User created successfully. Please check your email for verification code."
+        )
+        
+        return AuthResponse(
+            message=message,
+            user=UserResponse(**user)
+        )
+    
     except Exception as e:
-        print(f"Failed to send verification email: {e}")
-    
-    message = (
-        "Account updated successfully. A new verification code has been sent to your email."
-        if is_reregistration
-        else "User created successfully. Please check your email for verification code."
-    )
-    
-    return AuthResponse(
-        message=message,
-        user=UserResponse(**user)
-    )
+        print(f"❌ Signup error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create user account"
+        )
 
 
 @router.post("/login", response_model=AuthResponse)

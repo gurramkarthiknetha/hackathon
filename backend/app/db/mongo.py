@@ -62,7 +62,7 @@ async def get_database() -> AsyncIOMotorDatabase:
 
 async def create_indexes():
     """Create database indexes for optimal query performance."""
-    if not db.database:
+    if db.database is None:
         return
     
     try:

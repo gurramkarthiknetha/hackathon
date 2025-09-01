@@ -47,7 +47,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
         
         # Remove server header
-        response.headers.pop("server", None)
+        if "server" in response.headers:
+            del response.headers["server"]
         
         return response
 
