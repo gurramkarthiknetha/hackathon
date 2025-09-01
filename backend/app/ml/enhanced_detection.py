@@ -340,8 +340,15 @@ class EnhancedMultiModalDetector:
     def __init__(self):
         # Initialize YOLO model
         try:
-            self.yolo_model = YOLO("yolov8n.pt")
-            logger.info("YOLO model loaded successfully")
+            # Use the trained model from the models directory
+            model_path = os.path.join(os.path.dirname(__file__), "models", "yolov8n.pt")
+            if os.path.exists(model_path):
+                self.yolo_model = YOLO(model_path)
+                logger.info(f"YOLO model loaded successfully from {model_path}")
+            else:
+                # Fallback to default model
+                self.yolo_model = YOLO("yolov8n.pt")
+                logger.warning(f"Trained model not found at {model_path}, using default yolov8n.pt")
         except Exception as e:
             logger.error(f"Error loading YOLO model: {e}")
             self.yolo_model = None

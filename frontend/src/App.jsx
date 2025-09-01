@@ -20,6 +20,21 @@ import RealTimeAlertsPage from "./pages/operator/RealTimeAlertsPage";
 import ZoneMapPage from "./pages/operator/ZoneMapPage";
 import AICommandCenterPage from "./pages/operator/AICommandCenterPage";
 import IncidentTimelinePage from "./pages/operator/IncidentTimelinePage";
+
+// Admin Pages
+import UserManagementPage from "./pages/admin/UserManagementPage";
+import NotificationManagementPage from "./pages/admin/NotificationManagementPage";
+import AnalyticsReportsPage from "./pages/admin/AnalyticsReportsPage";
+import SystemSettingsPage from "./pages/admin/SystemSettingsPage";
+import SecurityAuditPage from "./pages/admin/SecurityAuditPage";
+import ZoneManagementPage from "./pages/admin/ZoneManagementPage";
+
+// Responder Pages
+import AssignedTasksPage from "./pages/responder/AssignedTasksPage";
+import ResponderMapPage from "./pages/responder/ResponderMapPage";
+import QuickActionsPage from "./pages/responder/QuickActionsPage";
+import StatusCommunicationPage from "./pages/responder/StatusCommunicationPage";
+import IncidentReportsPage from "./pages/responder/IncidentReportsPage";
 import { Toaster } from "react-hot-toast";
 import { useAuthStore } from "./store/authStore";
 import { useEffect } from "react";
@@ -89,6 +104,21 @@ function App() {
 					<Route path='operator/zone-map' element={<ZoneMapPage />} />
 					<Route path='operator/command-center' element={<AICommandCenterPage />} />
 					<Route path='operator/timeline' element={<IncidentTimelinePage />} />
+					
+					{/* Admin Routes */}
+					<Route path='admin/users' element={<UserManagementPage />} />
+					<Route path='admin/notifications' element={<NotificationManagementPage />} />
+					<Route path='admin/analytics' element={<AnalyticsReportsPage />} />
+					<Route path='admin/settings' element={<SystemSettingsPage />} />
+					<Route path='admin/security' element={<SecurityAuditPage />} />
+					<Route path='admin/zones' element={<ZoneManagementPage />} />
+					
+					{/* Responder Routes */}
+					<Route path='responder/tasks' element={<AssignedTasksPage />} />
+					<Route path='responder/map' element={<ResponderMapPage />} />
+					<Route path='responder/actions' element={<QuickActionsPage />} />
+					<Route path='responder/communication' element={<StatusCommunicationPage />} />
+					<Route path='responder/reports' element={<IncidentReportsPage />} />
 				</Route>
 
 				{/* Legacy Dashboard Route - redirect to new dashboard */}

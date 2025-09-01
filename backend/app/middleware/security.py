@@ -31,10 +31,10 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "style-src 'self' 'unsafe-inline'",
             "script-src 'self'",
             "img-src 'self' data: https:",
-            "connect-src 'self'",
+            "connect-src 'self' ws: wss:",
             "font-src 'self'",
             "object-src 'none'",
-            "media-src 'self'",
+            "media-src 'self' blob:",
             "frame-src 'none'"
         ]
         response.headers["Content-Security-Policy"] = "; ".join(csp_directives)

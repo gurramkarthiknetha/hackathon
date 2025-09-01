@@ -14,7 +14,6 @@ router = APIRouter(prefix="/api/ml", tags=["ml-detection"])
 
 
 @router.post("/analyze/enhanced")
-@incident_limiter.limit("20/1minute")
 async def analyze_frame(
     request: Request,
     file: UploadFile = File(...)

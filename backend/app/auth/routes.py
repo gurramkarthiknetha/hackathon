@@ -27,7 +27,6 @@ router = APIRouter(prefix="/api/auth", tags=["authentication"])
 
 
 @router.post("/signup", response_model=AuthResponse)
-@limiter.limit("5/15minutes")
 async def signup(
     request: Request,
     user_data: UserCreate,
@@ -97,16 +96,31 @@ async def signup(
             user=UserResponse(**user)
         )
     
+    except HTTPException:
+        # Re-raise HTTP exceptions (like user already exists)
+        raise
     except Exception as e:
         print(f"❌ Signup error: {e}")
+        
+        # Provide more specific error messages based on the exception type
+        error_message = "Failed to create user account"
+        
+        if "duplicate key error" in str(e).lower() or "11000" in str(e):
+            error_message = "An account with this email already exists"
+        elif "connection" in str(e).lower() or "timeout" in str(e).lower():
+            error_message = "Database connection error. Please try again later"
+        elif "validation" in str(e).lower():
+            error_message = "Invalid user data provided"
+        elif "network" in str(e).lower():
+            error_message = "Network error. Please check your connection"
+        
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create user account"
+            detail=error_message
         )
 
 
 @router.post("/login", response_model=AuthResponse)
-@limiter.limit("5/15minutes")
 async def login(
     request: Request,
     credentials: UserLogin,
@@ -169,7 +183,6 @@ async def logout(response: Response):
 
 
 @router.post("/verify-email", response_model=AuthResponse)
-@limiter.limit("15/5minutes")
 async def verify_email(
     request: Request,
     verification: EmailVerification,
@@ -197,7 +210,6 @@ async def verify_email(
 
 
 @router.post("/resend-verification", response_model=AuthResponse)
-@limiter.limit("15/5minutes")
 async def resend_verification(
     request: Request,
     data: ResendVerification,
@@ -239,7 +251,6 @@ async def resend_verification(
 
 
 @router.post("/forgot-password", response_model=AuthResponse)
-@limiter.limit("3/1hour")
 async def forgot_password(
     request: Request,
     data: ForgotPassword,
@@ -263,7 +274,6 @@ async def forgot_password(
 
 
 @router.post("/reset-password/{token}", response_model=AuthResponse)
-@limiter.limit("3/1hour")
 async def reset_password(
     request: Request,
     token: str,

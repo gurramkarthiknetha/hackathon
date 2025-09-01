@@ -16,7 +16,7 @@ api_router = APIRouter()
 # Include all route modules
 api_router.include_router(auth_router)
 api_router.include_router(users_router)
-# api_router.include_router(ml_router)  # Temporarily disabled
+api_router.include_router(ml_router)
 api_router.include_router(monitoring_router)
 api_router.include_router(camera_router)
 

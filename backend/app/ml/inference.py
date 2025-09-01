@@ -55,6 +55,9 @@ class ModelManager:
                 if not model_path.exists():
                     # Use the existing yolov8n.pt model
                     model_path = Path(__file__).parent / 'models/yolov8n.pt'
+                    if not model_path.exists():
+                        # Fallback to default model
+                        model_path = "yolov8n.pt"
                 model = YOLO(str(model_path))
                 self.models[model_name] = model
                 print(f"✅ Loaded YOLO model: {model_name}")

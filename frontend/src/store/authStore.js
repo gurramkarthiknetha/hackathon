@@ -232,28 +232,17 @@ export const useAuthStore = create((set, get) => ({
 				error: null
 			});
 		} catch (error) {
-			// In development mode, create a mock user for testing
+			// Always clear authentication state when check fails
+			set({
+				user: null,
+				isAuthenticated: false,
+				isCheckingAuth: false,
+				error: null
+			});
+			
+			// Log the error in development mode for debugging
 			if (import.meta.env.DEV) {
-				set({
-					user: {
-						id: 'dev-user',
-						name: 'Development User',
-						email: 'dev@example.com',
-						role: 'operator',
-						isVerified: true
-					},
-					isAuthenticated: true,
-					isCheckingAuth: false,
-					error: null
-				});
-				console.log('Using development mock user');
-			} else {
-				set({
-					user: null,
-					isAuthenticated: false,
-					isCheckingAuth: false,
-					error: null
-				});
+				console.log('Authentication check failed:', error.response?.data?.detail || error.message);
 			}
 		}
 	},

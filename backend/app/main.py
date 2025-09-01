@@ -9,9 +9,7 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 import socketio
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
-from slowapi.errors import RateLimitExceeded
+# Rate limiting imports removed
 
 from app.config import settings
 from app.db.mongo import connect_to_mongo, close_mongo_connection, check_connection
@@ -19,8 +17,7 @@ from app.middleware.security import (
     setup_cors_middleware,
     SecurityHeadersMiddleware,
     RequestSanitizationMiddleware,
-    RequestLoggingMiddleware,
-    limiter
+    RequestLoggingMiddleware
 )
 from app.auth.routes import router as auth_router
 from app.realtime.socket import sio, create_socket_app
@@ -59,8 +56,7 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Add rate limiter state
-app.state.limiter = limiter
+# Rate limiter removed
 
 # Setup middleware (order matters!)
 app.add_middleware(RequestLoggingMiddleware)
@@ -115,17 +111,7 @@ async def detection_alert(request: Request):
         raise HTTPException(status_code=500, detail="Failed to process alert")
 
 
-# Rate limit error handler
-@app.exception_handler(RateLimitExceeded)
-async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
-    response = JSONResponse(
-        status_code=429,
-        content={"success": False, "message": f"Rate limit exceeded: {exc.detail}"}
-    )
-    response = request.app.state.limiter._inject_headers(
-        response, request.state.view_rate_limit
-    )
-    return response
+# Rate limit error handler removed
 
 
 # Global exception handler

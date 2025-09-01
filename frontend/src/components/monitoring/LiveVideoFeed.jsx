@@ -12,6 +12,7 @@ const LiveVideoFeed = ({ selectedIncident, currentCamera: propCurrentCamera }) =
   const [detectionResults, setDetectionResults] = useState(null);
   const [aiStatus, setAiStatus] = useState('idle');
   const videoRef = useRef(null);
+  const canvasRef = useRef(null);
 
   // Debug logging
   console.log('LiveVideoFeed state:', { 
@@ -126,6 +127,7 @@ const LiveVideoFeed = ({ selectedIncident, currentCamera: propCurrentCamera }) =
         formData.append('file', blob, 'frame.jpg');
         
         try {
+          console.log('📤 Sending frame to ML API...');
           setAiStatus('analyzing');
           const response = await fetch(`${API_URL}/ml/analyze/enhanced`, {
             method: 'POST',
@@ -133,11 +135,19 @@ const LiveVideoFeed = ({ selectedIncident, currentCamera: propCurrentCamera }) =
             credentials: 'include'
           });
           
+          console.log('📥 ML API response status:', response.status);
+          
           if (response.ok) {
             const data = await response.json();
             setDetectionResults(data);
             setAiStatus('active');
-            console.log('Detection results:', data);
+            console.log('🎯 Detection results received:', data);
+            console.log('📊 Person count:', data.enhanced_multimodal?.person_count || 0);
+            console.log('📦 All objects:', data.standard_ml?.objects?.length || 0);
+            console.log('📦 Person bounding boxes:', data.enhanced_multimodal?.person_bboxes?.length || 0);
+            
+            // Draw bounding boxes on canvas
+            drawBoundingBoxes(data);
           } else {
             setAiStatus('error');
           }
@@ -150,6 +160,111 @@ const LiveVideoFeed = ({ selectedIncident, currentCamera: propCurrentCamera }) =
     } catch (error) {
       console.error('Error capturing frame:', error);
       setAiStatus('error');
+    }
+  };
+
+  // Draw bounding boxes on canvas overlay
+  const drawBoundingBoxes = (data) => {
+    if (!canvasRef.current || !videoRef.current) {
+      console.log('Canvas or video ref not available for drawing');
+      return;
+    }
+    
+    const canvas = canvasRef.current;
+    const video = videoRef.current;
+    const ctx = canvas.getContext('2d');
+    
+    console.log('Drawing bounding boxes:', data);
+    console.log('Video dimensions:', video.videoWidth, 'x', video.videoHeight);
+    console.log('Canvas dimensions:', canvas.width, 'x', canvas.height);
+    
+    // Set canvas size to match video
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    // Clear previous drawings
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw all object detections from standard ML
+    if (data.standard_ml?.objects && data.standard_ml.objects.length > 0) {
+      console.log(`Drawing ${data.standard_ml.objects.length} object bounding boxes`);
+      
+      data.standard_ml.objects.forEach((detection, index) => {
+        const { bbox, class_name, confidence } = detection;
+        const { x, y, width, height } = bbox;
+        
+        console.log(`Object ${index + 1}: ${class_name} bbox=[${x}, ${y}, ${width}, ${height}], confidence=${confidence}`);
+        
+        // Color coding for different object types
+        let strokeColor = '#00ff00'; // Default green
+        if (class_name === 'person') strokeColor = '#00ff00'; // Green for persons
+        else if (['car', 'truck', 'bus', 'motorcycle'].includes(class_name)) strokeColor = '#ff6600'; // Orange for vehicles
+        else if (['chair', 'couch', 'bed', 'table'].includes(class_name)) strokeColor = '#6600ff'; // Purple for furniture
+        else if (['laptop', 'tv', 'cell phone', 'keyboard'].includes(class_name)) strokeColor = '#00ffff'; // Cyan for electronics
+        else strokeColor = '#ffff00'; // Yellow for other objects
+        
+        // Draw bounding box
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x, y, width, height);
+        
+        // Draw label background
+        const label = `${class_name} ${confidence.toFixed(2)}`;
+        ctx.font = '14px Arial';
+        const textWidth = ctx.measureText(label).width;
+        
+        ctx.fillStyle = strokeColor.replace(')', ', 0.8)');
+        ctx.fillRect(x, y - 22, textWidth + 8, 22);
+        
+        // Draw label text
+        ctx.fillStyle = '#000000';
+        ctx.fillText(label, x + 4, y - 6);
+      });
+    }
+    
+    // Draw person bounding boxes from enhanced detection (if available)
+    if (data.enhanced_multimodal?.person_bboxes && data.enhanced_multimodal.person_bboxes.length > 0) {
+      console.log(`Drawing ${data.enhanced_multimodal.person_bboxes.length} enhanced person bounding boxes`);
+      
+      data.enhanced_multimodal.person_bboxes.forEach((bbox, index) => {
+        const [x, y, width, height] = bbox.bbox;
+        console.log(`Enhanced Person ${index + 1}: bbox=[${x}, ${y}, ${width}, ${height}], confidence=${bbox.confidence}`);
+        
+        // Draw enhanced person box with thicker border
+        ctx.strokeStyle = '#00ff00'; // Green for persons
+        ctx.lineWidth = 3;
+        ctx.strokeRect(x, y, width, height);
+        
+        // Draw label background
+        const label = `Person ${bbox.confidence.toFixed(2)}`;
+        ctx.font = '16px Arial';
+        const textWidth = ctx.measureText(label).width;
+        
+        ctx.fillStyle = 'rgba(0, 255, 0, 0.8)';
+        ctx.fillRect(x, y - 25, textWidth + 10, 25);
+        
+        // Draw label text
+        ctx.fillStyle = '#000000';
+        ctx.fillText(label, x + 5, y - 8);
+      });
+    }
+    
+    // Draw detection indicators for emergencies
+    const emergencyDetections = data.enhanced_multimodal?.detections || data.detections;
+    if (emergencyDetections) {
+      let yOffset = 30;
+      Object.entries(emergencyDetections).forEach(([category, detection]) => {
+        if (detection.detected) {
+          ctx.fillStyle = 'rgba(255, 0, 0, 0.8)';
+          ctx.fillRect(10, yOffset, 200, 30);
+          
+          ctx.fillStyle = '#ffffff';
+          ctx.font = '14px Arial';
+          ctx.fillText(`⚠️ ${category.toUpperCase()}`, 15, yOffset + 20);
+          
+          yOffset += 35;
+        }
+      });
     }
   };
 
@@ -187,26 +302,83 @@ const LiveVideoFeed = ({ selectedIncident, currentCamera: propCurrentCamera }) =
     }
   }, [stream]);
 
+  // Update canvas size when video dimensions change
+  useEffect(() => {
+    const updateCanvasSize = () => {
+      if (canvasRef.current && videoRef.current && videoRef.current.videoWidth > 0) {
+        const canvas = canvasRef.current;
+        const video = videoRef.current;
+        
+        // Set canvas size to match video display size
+        const rect = video.getBoundingClientRect();
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.style.width = rect.width + 'px';
+        canvas.style.height = rect.height + 'px';
+      }
+    };
+
+    if (videoRef.current) {
+      videoRef.current.addEventListener('loadedmetadata', updateCanvasSize);
+      videoRef.current.addEventListener('resize', updateCanvasSize);
+      
+      return () => {
+        if (videoRef.current) {
+          videoRef.current.removeEventListener('loadedmetadata', updateCanvasSize);
+          videoRef.current.removeEventListener('resize', updateCanvasSize);
+        }
+      };
+    }
+  }, [stream]);
+
   // Start AI analysis when camera is active
   useEffect(() => {
     let analysisInterval;
+    let retryCount = 0;
+    const maxRetries = 10;
     
-    if (stream && videoRef.current && videoRef.current.videoWidth > 0) {
-      console.log('Starting AI analysis interval');
-      setAiStatus('active');
+    console.log('AI analysis effect triggered:', {
+      hasStream: !!stream,
+      hasVideoRef: !!videoRef.current,
+      videoWidth: videoRef.current?.videoWidth,
+      videoHeight: videoRef.current?.videoHeight
+    });
+    
+    if (stream && videoRef.current) {
+      // Wait for video metadata to load or start immediately
+      const startAnalysis = () => {
+        if (videoRef.current && videoRef.current.videoWidth > 0 && videoRef.current.videoHeight > 0) {
+          console.log('✅ Starting AI analysis interval - video ready:', {
+            width: videoRef.current.videoWidth,
+            height: videoRef.current.videoHeight
+          });
+          setAiStatus('active');
+          
+          // Analyze frame every 3 seconds
+          analysisInterval = setInterval(() => {
+            console.log('🔍 Triggering automatic frame analysis...');
+            captureAndAnalyzeFrame();
+          }, 3000);
+        } else if (retryCount < maxRetries) {
+          retryCount++;
+          console.log(`⏳ Video not ready yet (attempt ${retryCount}/${maxRetries}), retrying in 1s`);
+          setTimeout(startAnalysis, 1000);
+        } else {
+          console.log('❌ Failed to start AI analysis - video dimensions not available');
+        }
+      };
       
-      // Analyze frame every 2 seconds
-      analysisInterval = setInterval(() => {
-        captureAndAnalyzeFrame();
-      }, 2000);
+      // Start analysis with a delay to ensure video is ready
+      setTimeout(startAnalysis, 2000);
     }
     
     return () => {
       if (analysisInterval) {
+        console.log('🛑 Clearing AI analysis interval');
         clearInterval(analysisInterval);
       }
     };
-  }, [stream, videoRef.current?.videoWidth]);
+  }, [stream]);
 
   // Fetch cameras on mount and detect system cameras
   useEffect(() => {
@@ -393,8 +565,9 @@ const LiveVideoFeed = ({ selectedIncident, currentCamera: propCurrentCamera }) =
       );
     }
 
-    const hasDetections = detectionResults.detections && 
-      Object.values(detectionResults.detections).some(detection => detection.detected);
+    const hasDetections = (detectionResults.enhanced_multimodal?.detections && 
+      Object.values(detectionResults.enhanced_multimodal.detections).some(detection => detection.detected)) ||
+      (detectionResults.standard_ml?.objects && detectionResults.standard_ml.objects.length > 0);
 
     return (
       <div className="absolute top-4 left-4 bg-green-500/20 px-3 py-2 rounded">
@@ -510,22 +683,96 @@ const LiveVideoFeed = ({ selectedIncident, currentCamera: propCurrentCamera }) =
               onError={() => setVideoError('Failed to load camera stream')}
             />
 
+            {/* Canvas overlay for bounding boxes */}
+            <canvas
+              ref={canvasRef}
+              className="absolute top-0 left-0 w-full h-full pointer-events-none"
+              style={{ zIndex: 10 }}
+            />
+
             {/* AI Status for System Camera */}
             <AIDetectionStatus />
             
+            {/* Manual Test Button */}
+            <button
+              onClick={captureAndAnalyzeFrame}
+              className="absolute bottom-4 left-4 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
+            >
+              🔍 Test Detection
+            </button>
+            
             {/* Detection Results Overlay */}
-            {detectionResults && detectionResults.detections && (
-              <div className="absolute top-4 left-4 bg-black bg-opacity-70 text-white p-3 rounded-lg">
-                <h4 className="font-semibold mb-2">AI Detection Results</h4>
-                <p>Objects: {detectionResults.detections.length}</p>
-                <p>Persons: {detectionResults.person_count || 0}</p>
-                {detectionResults.emergency_detected && (
-                  <p className="text-red-400 font-bold">⚠️ {detectionResults.emergency_type}</p>
+            {detectionResults && (
+              <div className="absolute top-4 right-4 bg-black bg-opacity-80 text-white p-4 rounded-lg max-w-sm max-h-96 overflow-y-auto">
+                <h4 className="font-bold mb-3 text-green-400">🤖 AI Detection Results</h4>
+                
+                {/* All Objects Count */}
+                <div className="mb-3">
+                  <span className="text-blue-400 font-semibold">📦 Total Objects: </span>
+                  <span className="text-white font-bold">{detectionResults.standard_ml?.objects?.length || 0}</span>
+                </div>
+                
+                {/* Person Count */}
+                <div className="mb-3">
+                  <span className="text-blue-400 font-semibold">👥 Persons: </span>
+                  <span className="text-white font-bold">{detectionResults.enhanced_multimodal?.person_count || 0}</span>
+                </div>
+
+                {/* All Detected Objects */}
+                {detectionResults.standard_ml?.objects && detectionResults.standard_ml.objects.length > 0 && (
+                  <div className="space-y-1 mb-3">
+                    <h5 className="text-cyan-400 font-semibold text-sm">Detected Objects:</h5>
+                    <div className="max-h-32 overflow-y-auto space-y-1">
+                      {detectionResults.standard_ml.objects.map((obj, index) => (
+                        <div key={index} className="flex justify-between items-center text-xs">
+                          <span className="capitalize text-gray-300 truncate">
+                            {obj.class_name}
+                          </span>
+                          <span className="text-yellow-300 font-bold ml-2">
+                            {(obj.confidence * 100).toFixed(0)}%
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )}
-                <div className="text-xs mt-2">
-                  {detectionResults.detected_objects?.slice(0, 3).map((obj, i) => (
-                    <span key={i} className="bg-blue-600 px-2 py-1 rounded mr-1">{obj}</span>
-                  ))}
+
+                {/* Emergency Detection Categories */}
+                {detectionResults.enhanced_multimodal?.detections && Object.keys(detectionResults.enhanced_multimodal.detections).length > 0 && (
+                  <div className="space-y-2 mb-3">
+                    <h5 className="text-yellow-400 font-semibold text-sm">Emergency Status:</h5>
+                    {Object.entries(detectionResults.enhanced_multimodal.detections).map(([category, detection]) => (
+                      <div key={category} className="flex justify-between items-center text-sm">
+                        <span className="capitalize text-gray-300">
+                          {category.replace(/([A-Z])/g, ' $1').trim()}:
+                        </span>
+                        <div className="flex items-center space-x-2">
+                          <span className={`font-bold ${detection.detected ? 'text-red-400' : 'text-green-400'}`}>
+                            {detection.detected ? '⚠️ YES' : '✅ NO'}
+                          </span>
+                          {detection.detected && (
+                            <span className="text-yellow-300 text-xs">
+                              {(detection.confidence * 100).toFixed(1)}%
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Person Bounding Boxes Info */}
+                {detectionResults.enhanced_multimodal?.person_bboxes && detectionResults.enhanced_multimodal.person_bboxes.length > 0 && (
+                  <div className="mt-3 pt-2 border-t border-gray-600">
+                    <span className="text-cyan-400 text-sm">
+                      📦 {detectionResults.enhanced_multimodal.person_bboxes.length} person(s) with enhanced tracking
+                    </span>
+                  </div>
+                )}
+
+                {/* Timestamp */}
+                <div className="mt-3 pt-2 border-t border-gray-600 text-xs text-gray-400">
+                  Last updated: {new Date(detectionResults.enhanced_multimodal?.timestamp || detectionResults.timestamp || Date.now()).toLocaleTimeString()}
                 </div>
               </div>
             )}

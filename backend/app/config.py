@@ -18,8 +18,8 @@ class Settings(BaseSettings):
     debug: bool = True
     
     # Database Configuration
-    mongodb_uri: str = "mongodb://localhost:27017/auth_tutorial"
-    db_name: str = "auth_tutorial"
+    mongodb_uri: str = "mongodb+srv://hackergkn:karthik@hackathon.xkjyqhh.mongodb.net/aievent?retryWrites=true&w=majority&appName=hackathon"
+    db_name: str = "aievent"
     
     # JWT Configuration
     jwt_secret: str = "default_jwt_secret_change_in_production"

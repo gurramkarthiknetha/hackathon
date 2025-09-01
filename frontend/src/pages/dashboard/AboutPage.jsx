@@ -203,27 +203,6 @@ const AboutPage = () => {
         </div>
       </motion.div>
 
-      {/* Call to Action */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.8 }}
-        className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl p-8 text-center"
-      >
-        <h2 className="text-2xl font-bold text-white mb-4">Ready to Get Started?</h2>
-        <p className="text-white text-opacity-90 mb-6 max-w-2xl mx-auto">
-          Join thousands of developers and teams who are already using our platform to build 
-          amazing projects and win hackathons.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <button className="px-6 py-3 bg-white text-green-600 font-bold rounded-lg hover:bg-gray-100 transition-colors duration-200">
-            Start Your Project
-          </button>
-          <button className="px-6 py-3 bg-transparent border-2 border-white text-white font-bold rounded-lg hover:bg-white hover:text-green-600 transition-all duration-200">
-            Learn More
-          </button>
-        </div>
-      </motion.div>
     </div>
   );
 };

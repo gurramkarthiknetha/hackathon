@@ -1,7 +1,9 @@
 import { motion } from "framer-motion";
 import { useSidebar } from "../../components/layout/DashboardLayout";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Users, Plus, Search, Filter, Edit, Trash2, Shield, UserCheck, UserX, Mail, Phone } from "lucide-react";
+import userService from "../../services/userService";
+import { ensureAuthentication } from "../../utils/auth";
 
 const UserManagementPage = () => {
   const { sidebarOpen } = useSidebar();
@@ -9,97 +11,101 @@ const UserManagementPage = () => {
   const [filterRole, setFilterRole] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [showAddUserForm, setShowAddUserForm] = useState(false);
+  const [users, setUsers] = useState([]);
+  const [userStats, setUserStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [pagination, setPagination] = useState({ page: 1, limit: 50, total: 0 });
 
-  // Mock user statistics
-  const userStats = [
-    { 
-      label: "Total Users", 
-      value: "156", 
-      color: "from-blue-500 to-blue-600",
-      change: "+12",
-      icon: Users
-    },
-    { 
-      label: "Active Users", 
-      value: "142", 
-      color: "from-green-500 to-green-600",
-      change: "+8",
-      icon: UserCheck
-    },
-    { 
-      label: "Admins", 
-      value: "8", 
-      color: "from-purple-500 to-purple-600",
-      change: "+1",
-      icon: Shield
-    },
-    { 
-      label: "Inactive", 
-      value: "14", 
-      color: "from-red-500 to-red-600",
-      change: "-3",
-      icon: UserX
-    }
-  ];
+  // Load users and stats on component mount
+  useEffect(() => {
+    ensureAuthentication(); // Set auth token for testing
+    loadUsers();
+    loadUserStats();
+  }, []);
 
-  // Mock users data
-  const users = [
-    {
-      id: 1,
-      name: "John Smith",
-      email: "john.smith@emergency.com",
-      phone: "+1 (555) 123-4567",
-      role: "admin",
-      status: "active",
-      lastLogin: new Date(Date.now() - 2 * 60 * 60 * 1000),
-      assignedZone: "all",
-      createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-    },
-    {
-      id: 2,
-      name: "Sarah Johnson",
-      email: "sarah.johnson@emergency.com",
-      phone: "+1 (555) 234-5678",
-      role: "operator",
-      status: "active",
-      lastLogin: new Date(Date.now() - 30 * 60 * 1000),
-      assignedZone: "central",
-      createdAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000)
-    },
-    {
-      id: 3,
-      name: "Mike Chen",
-      email: "mike.chen@emergency.com",
-      phone: "+1 (555) 345-6789",
-      role: "responder",
-      status: "active",
-      lastLogin: new Date(Date.now() - 15 * 60 * 1000),
-      assignedZone: "east",
-      createdAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000)
-    },
-    {
-      id: 4,
-      name: "Emily Davis",
-      email: "emily.davis@emergency.com",
-      phone: "+1 (555) 456-7890",
-      role: "responder",
-      status: "inactive",
-      lastLogin: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-      assignedZone: "west",
-      createdAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
-    },
-    {
-      id: 5,
-      name: "Alex Rodriguez",
-      email: "alex.rodriguez@emergency.com",
-      phone: "+1 (555) 567-8901",
-      role: "operator",
-      status: "active",
-      lastLogin: new Date(Date.now() - 45 * 60 * 1000),
-      assignedZone: "south",
-      createdAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000)
+  // Reload users when filters change
+  useEffect(() => {
+    loadUsers();
+  }, [searchTerm, filterRole, filterStatus, pagination.page]);
+
+  const loadUsers = async () => {
+    try {
+      setLoading(true);
+      const params = {
+        page: pagination.page,
+        limit: pagination.limit,
+        role: filterRole,
+        search: searchTerm || undefined,
+        isActive: filterStatus === 'active' ? true : filterStatus === 'inactive' ? false : undefined
+      };
+      
+      const response = await userService.getUsers(params);
+      setUsers(response.users || []);
+      setPagination(prev => ({ ...prev, total: response.total || 0 }));
+      setError(null);
+    } catch (err) {
+      console.error('Failed to load users:', err);
+      setError('Failed to load users. Please try again.');
+      setUsers([]);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  const loadUserStats = async () => {
+    try {
+      const stats = await userService.getUserStats();
+      setUserStats(stats);
+    } catch (err) {
+      console.error('Failed to load user stats:', err);
+    }
+  };
+
+  // Transform stats for display
+  const getDisplayStats = () => {
+    if (!userStats) {
+      return [
+        { label: "Total Users", value: "0", color: "from-blue-500 to-blue-600", change: "", icon: Users },
+        { label: "Active Users", value: "0", color: "from-green-500 to-green-600", change: "", icon: UserCheck },
+        { label: "Admins", value: "0", color: "from-purple-500 to-purple-600", change: "", icon: Shield },
+        { label: "Inactive", value: "0", color: "from-red-500 to-red-600", change: "", icon: UserX }
+      ];
+    }
+
+    const inactiveUsers = userStats.totalUsers - userStats.activeUsers;
+    return [
+      { 
+        label: "Total Users", 
+        value: userStats.totalUsers.toString(), 
+        color: "from-blue-500 to-blue-600",
+        change: "",
+        icon: Users
+      },
+      { 
+        label: "Active Users", 
+        value: userStats.activeUsers.toString(), 
+        color: "from-green-500 to-green-600",
+        change: "",
+        icon: UserCheck
+      },
+      { 
+        label: "Admins", 
+        value: (userStats.usersByRole?.admin || 0).toString(), 
+        color: "from-purple-500 to-purple-600",
+        change: "",
+        icon: Shield
+      },
+      { 
+        label: "Inactive", 
+        value: inactiveUsers.toString(), 
+        color: "from-red-500 to-red-600",
+        change: "",
+        icon: UserX
+      }
+    ];
+  };
+
 
   const roles = [
     { value: 'all', label: 'All Roles' },
@@ -137,24 +143,50 @@ const UserManagementPage = () => {
     }
   };
 
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = filterRole === 'all' || user.role === filterRole;
-    const matchesStatus = filterStatus === 'all' || user.status === filterStatus;
-    return matchesSearch && matchesRole && matchesStatus;
-  });
+  // Users are already filtered by the API, so we use them directly
+  const filteredUsers = users;
 
   const handleEditUser = (userId) => {
     console.log("Edit user:", userId);
+    // TODO: Implement edit user modal
   };
 
-  const handleDeleteUser = (userId) => {
-    console.log("Delete user:", userId);
+  const handleDeleteUser = async (userId) => {
+    console.log('Attempting to delete user with ID:', userId);
+    
+    // Force refresh auth token
+    ensureAuthentication();
+    console.log('Current auth token:', localStorage.getItem('auth_token'));
+    
+    if (window.confirm('Are you sure you want to deactivate this user?')) {
+      try {
+        console.log('Calling userService.deleteUser...');
+        const result = await userService.deleteUser(userId);
+        console.log('Delete result:', result);
+        loadUsers(); // Reload users after deletion
+        loadUserStats(); // Reload stats
+        alert('User deleted successfully!');
+      } catch (err) {
+        console.error('Failed to delete user - Full error:', err);
+        console.error('Error response:', err.response?.data);
+        console.error('Error status:', err.response?.status);
+        alert(`Failed to delete user: ${err.response?.data?.detail || err.message}`);
+      }
+    }
   };
 
-  const handleToggleStatus = (userId) => {
-    console.log("Toggle status for user:", userId);
+  const handleToggleStatus = async (userId) => {
+    const user = users.find(u => u._id === userId);
+    if (!user) return;
+    
+    try {
+      await userService.updateUser(userId, { isActive: !user.isActive });
+      loadUsers(); // Reload users after status change
+      loadUserStats(); // Reload stats
+    } catch (err) {
+      console.error('Failed to toggle user status:', err);
+      alert('Failed to update user status. Please try again.');
+    }
   };
 
   return (
@@ -192,7 +224,7 @@ const UserManagementPage = () => {
         transition={{ delay: 0.1 }}
         className="grid grid-cols-2 lg:grid-cols-4 gap-4"
       >
-        {userStats.map((stat, index) => (
+        {getDisplayStats().map((stat, index) => (
           <motion.div
             key={stat.label}
             initial={{ opacity: 0, scale: 0.9 }}
@@ -285,7 +317,12 @@ const UserManagementPage = () => {
       >
         <div className="p-4 border-b border-gray-700/50">
           <h3 className="text-lg font-semibold text-white">System Users</h3>
-          <p className="text-gray-400 text-sm">{filteredUsers.length} users found</p>
+          <p className="text-gray-400 text-sm">
+            {loading ? 'Loading...' : `${pagination.total} users found`}
+          </p>
+          {error && (
+            <p className="text-red-400 text-sm mt-1">{error}</p>
+          )}
         </div>
         
         <div className="overflow-x-auto">
@@ -301,71 +338,85 @@ const UserManagementPage = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredUsers.map((user, index) => (
-                <motion.tr
-                  key={user.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5 + index * 0.1 }}
-                  className="border-b border-gray-700/30 hover:bg-gray-800/30 transition-colors duration-200"
-                >
-                  <td className="p-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
-                        {user.name.charAt(0)}
+              {loading ? (
+                <tr>
+                  <td colSpan="6" className="p-8 text-center text-gray-400">
+                    Loading users...
+                  </td>
+                </tr>
+              ) : filteredUsers.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="p-8 text-center text-gray-400">
+                    {error ? 'Failed to load users' : 'No users found'}
+                  </td>
+                </tr>
+              ) : (
+                filteredUsers.map((user, index) => (
+                  <motion.tr
+                    key={user._id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 + index * 0.1 }}
+                    className="border-b border-gray-700/30 hover:bg-gray-800/30 transition-colors duration-200"
+                  >
+                    <td className="p-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
+                          {user.name.charAt(0)}
+                        </div>
+                        <div>
+                          <h4 className="text-white font-medium">{user.name}</h4>
+                          <p className="text-gray-400 text-sm">{user.email}</p>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="text-white font-medium">{user.name}</h4>
-                        <p className="text-gray-400 text-sm">{user.email}</p>
+                    </td>
+                    <td className="p-4">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getRoleColor(user.role)}`}>
+                        {user.role.toUpperCase()}
+                      </span>
+                    </td>
+                    <td className="p-4">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(user.isActive ? 'active' : 'inactive')}`}>
+                        {user.isActive ? 'ACTIVE' : 'INACTIVE'}
+                      </span>
+                    </td>
+                    <td className="p-4">
+                      <span className="text-gray-300">{user.assignedZone || 'Not assigned'}</span>
+                    </td>
+                    <td className="p-4">
+                      <span className="text-gray-300 text-sm">
+                        {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never'}
+                      </span>
+                    </td>
+                    <td className="p-4">
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => handleEditUser(user._id)}
+                          className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors duration-200"
+                        >
+                          <Edit size={14} />
+                        </button>
+                        <button
+                          onClick={() => handleToggleStatus(user._id)}
+                          className={`p-2 rounded transition-colors duration-200 ${
+                            user.isActive 
+                              ? 'bg-yellow-600 hover:bg-yellow-700' 
+                              : 'bg-green-600 hover:bg-green-700'
+                          } text-white`}
+                        >
+                          {user.isActive ? <UserX size={14} /> : <UserCheck size={14} />}
+                        </button>
+                        <button
+                          onClick={() => handleDeleteUser(user._id)}
+                          className="p-2 bg-red-600 hover:bg-red-700 text-white rounded transition-colors duration-200"
+                        >
+                          <Trash2 size={14} />
+                        </button>
                       </div>
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getRoleColor(user.role)}`}>
-                      {user.role.toUpperCase()}
-                    </span>
-                  </td>
-                  <td className="p-4">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(user.status)}`}>
-                      {user.status.toUpperCase()}
-                    </span>
-                  </td>
-                  <td className="p-4">
-                    <span className="text-gray-300">{user.assignedZone}</span>
-                  </td>
-                  <td className="p-4">
-                    <span className="text-gray-300 text-sm">
-                      {user.lastLogin.toLocaleDateString()}
-                    </span>
-                  </td>
-                  <td className="p-4">
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => handleEditUser(user.id)}
-                        className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors duration-200"
-                      >
-                        <Edit size={14} />
-                      </button>
-                      <button
-                        onClick={() => handleToggleStatus(user.id)}
-                        className={`p-2 rounded transition-colors duration-200 ${
-                          user.status === 'active' 
-                            ? 'bg-yellow-600 hover:bg-yellow-700' 
-                            : 'bg-green-600 hover:bg-green-700'
-                        } text-white`}
-                      >
-                        {user.status === 'active' ? <UserX size={14} /> : <UserCheck size={14} />}
-                      </button>
-                      <button
-                        onClick={() => handleDeleteUser(user.id)}
-                        className="p-2 bg-red-600 hover:bg-red-700 text-white rounded transition-colors duration-200"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </td>
-                </motion.tr>
-              ))}
+                    </td>
+                  </motion.tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

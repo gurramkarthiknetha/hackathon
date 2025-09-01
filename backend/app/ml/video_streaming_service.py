@@ -32,7 +32,14 @@ socketio = SocketIO(app, cors_allowed_origins=["http://localhost:3000", "http://
 
 class VideoStreamingService:
     def __init__(self):
-        self.model = YOLO("yolov8n.pt")
+        # Load trained YOLOv8 model
+        model_path = os.path.join(os.path.dirname(__file__), "models", "yolov8n.pt")
+        if os.path.exists(model_path):
+            self.model = YOLO(model_path)
+            print(f"✅ Loaded trained YOLOv8 model from {model_path}")
+        else:
+            self.model = YOLO("yolov8n.pt")
+            print(f"⚠️ Trained model not found at {model_path}, using default YOLOv8n model")
         self.cameras = {}
         self.detection_results = {}
         self.running = False

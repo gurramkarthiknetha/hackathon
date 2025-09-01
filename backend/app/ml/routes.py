@@ -21,7 +21,6 @@ limiter = Limiter(key_func=get_remote_address)
 
 
 @router.post("/detect")
-@limiter.limit("10/1minute")
 async def detect_objects(
     request: Request,
     file: UploadFile = File(...),
@@ -49,7 +48,6 @@ async def detect_objects(
 
 
 @router.post("/analyze/enhanced")
-@limiter.limit("5/1minute")
 async def enhanced_multimodal_analysis(
     request: Request,
     file: UploadFile = File(...),
@@ -72,7 +70,6 @@ async def enhanced_multimodal_analysis(
 
 
 @router.post("/analyze/comprehensive")
-@limiter.limit("3/1minute")
 async def comprehensive_analysis(
     request: Request,
     file: UploadFile = File(...),
@@ -134,7 +131,6 @@ async def comprehensive_analysis(
 
 
 @router.post("/fire-smoke")
-@limiter.limit("10/1minute")
 async def detect_fire_smoke(
     request: Request,
     file: UploadFile = File(...),
@@ -163,7 +159,6 @@ async def detect_fire_smoke(
 
 
 @router.post("/pose")
-@limiter.limit("10/1minute")
 async def analyze_pose(
     request: Request,
     file: UploadFile = File(...),
@@ -192,7 +187,6 @@ async def analyze_pose(
 
 
 @router.post("/crowd-analysis")
-@limiter.limit("10/1minute")
 async def analyze_crowd(
     request: Request,
     file: UploadFile = File(...),
@@ -221,7 +215,6 @@ async def analyze_crowd(
 
 
 @router.post("/analyze-frame")
-@limiter.limit("20/1minute")
 async def analyze_video_frame(
     request: Request,
     file: UploadFile = File(...),

@@ -139,7 +139,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
           {/* Header */}
           <div className={`flex items-center justify-between p-4 border-b border-gray-800 ${isMobile ? 'block' : 'hidden'}`}>
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-emerald-600 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-gradient-to-r from-blue-400 to-blue-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">H</span>
               </div>
               <h2 className="text-lg font-bold text-white">Dashboard</h2>
@@ -165,10 +165,11 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                   <NavLink
                     to={item.path}
                     onClick={() => isMobile && setSidebarOpen(false)}
+                    end={item.path === "/dashboard"}
                     className={({ isActive }) =>
                       `flex items-center space-x-3 p-3 rounded-lg transition-all duration-200 ${
                         isActive
-                          ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg"
+                          ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg"
                           : "text-gray-300 hover:text-white hover:bg-gray-800"
                       }`
                     }
