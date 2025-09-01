@@ -51,7 +51,7 @@ const AdminQuickActions = () => {
       title: 'Bulk Actions',
       description: 'Manage multiple users',
       icon: Users,
-      color: 'from-green-500 to-green-600',
+      color: 'from-cyan-500 to-cyan-600',
       action: () => toast.success('Bulk actions panel opened!')
     },
     {
@@ -216,7 +216,7 @@ const AdminQuickActions = () => {
       case 'critical': return 'border-red-500 bg-red-500/10';
       case 'high': return 'border-orange-500 bg-orange-500/10';
       case 'medium': return 'border-yellow-500 bg-yellow-500/10';
-      case 'low': return 'border-green-500 bg-green-500/10';
+      case 'low': return 'border-blue-400 bg-blue-400/10';
       default: return 'border-gray-500 bg-gray-500/10';
     }
   };

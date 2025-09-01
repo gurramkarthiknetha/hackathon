@@ -99,7 +99,7 @@ const QuickActions = () => {
       title: "Mark Complete",
       description: "Complete current task",
       icon: CheckCircle,
-      color: "bg-green-600 hover:bg-green-700"
+      color: "bg-blue-600 hover:bg-blue-700"
     },
     {
       id: "request_backup",

@@ -147,7 +147,7 @@ const StatusCommunicationPage = () => {
 
   // Status options
   const statusOptions = [
-    { value: 'available', label: 'Available', color: 'bg-green-600', description: 'Ready for assignments' },
+    { value: 'available', label: 'Available', color: 'bg-blue-600', description: 'Ready for assignments' },
     { value: 'responding', label: 'Responding', color: 'bg-blue-600', description: 'En route to incident' },
     { value: 'busy', label: 'Busy', color: 'bg-yellow-600', description: 'Handling incident' },
     { value: 'break', label: 'On Break', color: 'bg-purple-600', description: 'Taking a break' },

@@ -489,7 +489,7 @@ class VideoStreamingService:
             color_map = {
                 "fire": (0, 0, 255),      # Red
                 "smoke": (128, 128, 128),  # Gray
-                "running": (0, 255, 0),    # Green
+                "running": (255, 165, 0),    # Blue
                 "fallen": (255, 0, 0),     # Blue
                 "medical emergency": (255, 0, 255),  # Magenta
                 "stampede": (0, 255, 255), # Cyan

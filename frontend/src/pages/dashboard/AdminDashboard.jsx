@@ -56,7 +56,7 @@ const AdminDashboard = () => {
 			icon: UserCheck, 
 			label: "Verified Users", 
 			value: adminStats.verifiedUsers, 
-			color: "from-green-500 to-green-600",
+			color: "from-cyan-500 to-cyan-600",
 			change: "+8%"
 		},
 		{ 
@@ -77,14 +77,14 @@ const AdminDashboard = () => {
 
 	const roleDistribution = [
 		{ role: "Operators", count: adminStats.usersByRole.operator || 0, color: "bg-blue-500" },
-		{ role: "Responders", count: adminStats.usersByRole.responder || 0, color: "bg-green-500" },
+		{ role: "Responders", count: adminStats.usersByRole.responder || 0, color: "bg-cyan-500" },
 		{ role: "Admins", count: adminStats.usersByRole.admin || 0, color: "bg-purple-500" },
 	];
 
 	if (loading) {
 		return (
 			<div className="flex items-center justify-center h-full">
-				<div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-500"></div>
+				<div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
 			</div>
 		);
 	}
@@ -120,7 +120,7 @@ const AdminDashboard = () => {
 							<div>
 								<p className="text-gray-400 text-sm font-medium">{stat.label}</p>
 								<p className="text-2xl font-bold text-white mt-1">{stat.value}</p>
-								<p className="text-green-400 text-sm mt-1">{stat.change}</p>
+								<p className="text-blue-400 text-sm mt-1">{stat.change}</p>
 							</div>
 							<div className={`p-3 rounded-lg bg-gradient-to-r ${stat.color}`}>
 								<stat.icon className="h-6 w-6 text-white" />

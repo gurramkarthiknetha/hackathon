@@ -27,7 +27,7 @@ const ZoneManagementPage = () => {
     { 
       label: "Total Capacity", 
       value: "25,000", 
-      color: "from-green-500 to-green-600",
+      color: "from-blue-500 to-blue-600",
       change: "+2,000",
       icon: Users
     },
@@ -136,7 +136,7 @@ const ZoneManagementPage = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'normal': return 'text-green-400 bg-green-600';
+      case 'normal': return 'text-blue-400 bg-blue-600';
       case 'warning': return 'text-yellow-400 bg-yellow-600';
       case 'critical': return 'text-red-400 bg-red-600';
       case 'maintenance': return 'text-gray-400 bg-gray-600';
@@ -146,7 +146,7 @@ const ZoneManagementPage = () => {
 
   const getStatusBg = (status) => {
     switch (status) {
-      case 'normal': return 'bg-green-600';
+      case 'normal': return 'bg-blue-600';
       case 'warning': return 'bg-yellow-600';
       case 'critical': return 'bg-red-600';
       case 'maintenance': return 'bg-gray-600';
@@ -158,7 +158,7 @@ const ZoneManagementPage = () => {
     const percentage = (occupancy / capacity) * 100;
     if (percentage > 80) return 'bg-red-500';
     if (percentage > 60) return 'bg-yellow-500';
-    return 'bg-green-500';
+    return 'bg-blue-500';
   };
 
   const handleEditZone = (zoneId) => {

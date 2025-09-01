@@ -61,7 +61,7 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }) => {
                 }} 
               />
           </div>
-            <h1 className="text-xl font-bold bg-gradient-to-r from-green-400 to-emerald-600 text-transparent bg-clip-text hidden sm:block">
+            <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-cyan-600 text-transparent bg-clip-text hidden sm:block">
               AI Event Monitor
             </h1>
           </div>

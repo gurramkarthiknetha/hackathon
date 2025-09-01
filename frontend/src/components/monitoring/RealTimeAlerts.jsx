@@ -43,7 +43,7 @@ const RealTimeAlerts = ({ onIncidentSelect }) => {
       case "critical": return "border-red-500 bg-red-900/20 text-red-400";
       case "high": return "border-orange-500 bg-orange-900/20 text-orange-400";
       case "medium": return "border-yellow-500 bg-yellow-900/20 text-yellow-400";
-      case "low": return "border-green-500 bg-green-900/20 text-green-400";
+      case "low": return "border-blue-400 bg-blue-900/20 text-blue-400";
       default: return "border-gray-500 bg-gray-900/20 text-gray-400";
     }
   };
@@ -53,7 +53,7 @@ const RealTimeAlerts = ({ onIncidentSelect }) => {
       case "active": return "text-red-400";
       case "assigned": return "text-yellow-400";
       case "in_progress": return "text-blue-400";
-      case "resolved": return "text-green-400";
+      case "resolved": return "text-blue-400";
       default: return "text-gray-400";
     }
   };

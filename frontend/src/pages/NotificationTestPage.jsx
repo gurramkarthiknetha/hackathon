@@ -62,7 +62,7 @@ const NotificationTestPage = () => {
       type: 'success',
       severity: 'low',
       icon: CheckCircle,
-      color: 'from-green-500 to-green-600'
+      color: 'from-blue-500 to-blue-600'
     }
   ];
 

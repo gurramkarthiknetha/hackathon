@@ -133,14 +133,14 @@ const InteractiveZoneMap = ({ onIncidentSelect, selectedIncident }) => {
       case "critical": return "bg-red-500 border-red-400";
       case "high": return "bg-orange-500 border-orange-400";
       case "medium": return "bg-yellow-500 border-yellow-400";
-      case "low": return "bg-green-500 border-green-400";
+      case "low": return "bg-blue-400 border-blue-300";
       default: return "bg-gray-500 border-gray-400";
     }
   };
 
   const getResponderStatusColor = (status) => {
     switch (status) {
-      case "active": return "bg-green-500 border-green-400";
+      case "active": return "bg-blue-500 border-blue-400";
       case "responding": return "bg-blue-500 border-blue-400";
       case "offline": return "bg-gray-500 border-gray-400";
       default: return "bg-yellow-500 border-yellow-400";

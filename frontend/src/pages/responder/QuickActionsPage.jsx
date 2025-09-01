@@ -164,7 +164,7 @@ const QuickActionsPage = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'completed': return 'text-green-400 bg-green-600';
+      case 'completed': return 'text-blue-400 bg-blue-600';
       case 'pending': return 'text-yellow-400 bg-yellow-600';
       case 'failed': return 'text-red-400 bg-red-600';
       default: return 'text-gray-400 bg-gray-600';

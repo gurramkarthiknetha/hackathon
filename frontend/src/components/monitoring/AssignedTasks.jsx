@@ -91,7 +91,7 @@ const AssignedTasks = ({ currentLocation }) => {
     switch (priority) {
       case "high": return "border-red-500 bg-red-900/20 text-red-400";
       case "medium": return "border-yellow-500 bg-yellow-900/20 text-yellow-400";
-      case "low": return "border-green-500 bg-green-900/20 text-green-400";
+      case "low": return "border-blue-400 bg-blue-900/20 text-blue-400";
       default: return "border-gray-500 bg-gray-900/20 text-gray-400";
     }
   };
@@ -101,7 +101,7 @@ const AssignedTasks = ({ currentLocation }) => {
       case "assigned": return "text-blue-400";
       case "in_progress": return "text-yellow-400";
       case "pending": return "text-gray-400";
-      case "completed": return "text-green-400";
+      case "completed": return "text-blue-400";
       default: return "text-gray-400";
     }
   };

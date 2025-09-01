@@ -142,7 +142,7 @@ const ResponderMapPage = () => {
 
   const getDifficultyColor = (difficulty) => {
     switch (difficulty) {
-      case 'easy': return 'text-green-400';
+      case 'easy': return 'text-blue-400';
       case 'medium': return 'text-yellow-400';
       case 'hard': return 'text-red-400';
       default: return 'text-gray-400';

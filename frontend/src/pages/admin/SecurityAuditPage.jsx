@@ -149,19 +149,19 @@ const SecurityAuditPage = () => {
     switch (severity) {
       case 'high': return 'text-red-400 bg-red-600';
       case 'medium': return 'text-yellow-400 bg-yellow-600';
-      case 'low': return 'text-green-400 bg-green-600';
+      case 'low': return 'text-blue-400 bg-blue-600';
       default: return 'text-gray-400 bg-gray-600';
     }
   };
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'success': return 'text-green-400';
+      case 'success': return 'text-blue-400';
       case 'failed': return 'text-red-400';
       case 'blocked': return 'text-red-400';
       case 'monitoring': return 'text-yellow-400';
-      case 'resolved': return 'text-green-400';
-      case 'healthy': return 'text-green-400';
+      case 'resolved': return 'text-blue-400';
+      case 'healthy': return 'text-blue-400';
       case 'warning': return 'text-yellow-400';
       case 'error': return 'text-red-400';
       default: return 'text-gray-400';

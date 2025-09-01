@@ -277,7 +277,7 @@ const CameraManager = ({ onCameraSelect, selectedCamera }) => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'active':
-        return 'bg-green-400';
+        return 'bg-blue-400';
       case 'inactive':
         return 'bg-gray-400';
       case 'error':

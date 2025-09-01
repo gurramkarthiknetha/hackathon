@@ -126,7 +126,7 @@ const AICommandCenterPage = () => {
     switch (priority) {
       case 'high': return 'text-red-400 bg-red-600';
       case 'medium': return 'text-yellow-400 bg-yellow-600';
-      case 'low': return 'text-green-400 bg-green-600';
+      case 'low': return 'text-blue-400 bg-blue-600';
       default: return 'text-gray-400 bg-gray-600';
     }
   };

@@ -362,7 +362,7 @@ export const getSeverityColor = (severity) => {
     case 'critical': return 'text-red-400 bg-red-500/10 border-red-500';
     case 'high': return 'text-orange-400 bg-orange-500/10 border-orange-500';
     case 'medium': return 'text-yellow-400 bg-yellow-500/10 border-yellow-500';
-    case 'low': return 'text-green-400 bg-green-500/10 border-green-500';
+    case 'low': return 'text-blue-400 bg-blue-500/10 border-blue-500';
     default: return 'text-gray-400 bg-gray-500/10 border-gray-500';
   }
 };

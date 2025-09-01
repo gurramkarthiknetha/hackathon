@@ -64,7 +64,7 @@ const NotificationManagementPage = () => {
       label: "Delivered",
       value: "1,198",
       change: "+16%",
-      color: "from-green-500 to-green-600",
+      color: "from-cyan-500 to-cyan-600",
       icon: Users
     },
     {
@@ -91,7 +91,7 @@ const NotificationManagementPage = () => {
             <AdminQuickActions />
             <div className="bg-gray-800 bg-opacity-50 backdrop-filter backdrop-blur-xl rounded-xl p-6 border border-gray-700">
               <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
-                <FileText className="h-5 w-5 mr-2 text-green-400" />
+                <FileText className="h-5 w-5 mr-2 text-blue-400" />
                 Quick Templates
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

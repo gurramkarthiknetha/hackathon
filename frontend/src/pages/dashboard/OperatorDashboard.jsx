@@ -68,15 +68,15 @@ const OperatorDashboard = () => {
 			icon: Users,
 			label: "Active Responders",
 			value: stats.activeResponders,
-			color: "from-green-500 to-green-600",
+			color: "from-blue-500 to-blue-600",
 			change: "8/10 deployed"
 		},
 		{
 			icon: Shield,
 			label: "System Status",
 			value: stats.systemStatus.toUpperCase(),
-			color: "from-emerald-500 to-emerald-600",
-			change: "All systems green",
+			color: "from-cyan-500 to-cyan-600",
+			change: "All systems operational",
 			isText: true
 		},
 	];

@@ -157,7 +157,7 @@ const ResponderDashboard = () => {
 
 	const getStatusColor = (status) => {
 		switch (status) {
-			case 'available': return 'text-green-400 bg-green-900/20';
+			case 'available': return 'text-blue-400 bg-blue-900/20';
 			case 'responding': return 'text-blue-400 bg-blue-900/20';
 			case 'busy': return 'text-yellow-400 bg-yellow-900/20';
 			case 'offline': return 'text-gray-400 bg-gray-900/20';
@@ -208,22 +208,22 @@ const ResponderDashboard = () => {
 							) : (
 								<WifiOff className="h-4 w-4 text-red-400" />
 							)}
-							<span className={`text-xs ${isConnected ? 'text-green-400' : 'text-red-400'}`}>
+							<span className={`text-xs ${isConnected ? 'text-blue-400' : 'text-red-400'}`}>
 								{isConnected ? 'ONLINE' : 'OFFLINE'}
 							</span>
 						</div>
 						<div className="flex items-center space-x-1">
-							<Battery className={`h-4 w-4 ${batteryLevel > 20 ? 'text-green-400' : 'text-red-400'}`} />
+							<Battery className={`h-4 w-4 ${batteryLevel > 20 ? 'text-blue-400' : 'text-red-400'}`} />
 							<span className="text-xs text-gray-400">{batteryLevel}%</span>
 						</div>
 						<div className="flex items-center space-x-1">
-							<Signal className="h-4 w-4 text-green-400" />
+							<Signal className="h-4 w-4 text-blue-400" />
 							<div className="flex space-x-0.5">
 								{[...Array(4)].map((_, i) => (
 									<div
 										key={i}
 										className={`w-1 h-3 rounded-full ${
-											i < signalStrength ? 'bg-green-400' : 'bg-gray-600'
+											i < signalStrength ? 'bg-blue-400' : 'bg-gray-600'
 										}`}
 									/>
 								))}
