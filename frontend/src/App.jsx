@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import FloatingShape from "./components/ui/FloatingShape";
 import SignUpPage from "./pages/auth/SignUpPage";
 import LoginPage from "./pages/auth/LoginPage";
@@ -67,6 +67,7 @@ const RedirectAuthenticatedUser = ({ children }) => {
 
 function App() {
 	const { isCheckingAuth, checkAuth } = useAuthStore();
+	const location = useLocation();
 
 	useEffect(() => {
 		checkAuth();
@@ -74,14 +75,32 @@ function App() {
 
 	if (isCheckingAuth) return <LoadingSpinner />;
 
+	// hide decorative floating shapes on auth-related pages
+	const hideShapesOn = [
+		'/login',
+		'/signup',
+		'/verify-email',
+		'/forgot-password',
+	];
+
+	const isAuthRoute = hideShapesOn.some((p) => {
+		// also hide for reset-password which contains a token param
+		if (p === '/forgot-password') return location.pathname.startsWith(p);
+		return location.pathname === p || location.pathname.startsWith('/reset-password');
+	});
+
 	return (
 		<div
 			className='min-h-screen bg-gradient-to-br
-    from-gray-900 via-blue-900 to-cyan-900 relative overflow-hidden'
+	from-gray-900 via-blue-900 to-cyan-900 relative overflow-hidden'
 		>
-			<FloatingShape color='bg-blue-500' size='w-64 h-64' top='-5%' left='10%' delay={0} />
-			<FloatingShape color='bg-cyan-500' size='w-48 h-48' top='70%' left='80%' delay={5} />
-			<FloatingShape color='bg-blue-400' size='w-32 h-32' top='40%' left='-10%' delay={2} />
+			{!isAuthRoute && (
+				<>
+					<FloatingShape color='bg-blue-500' size='w-64 h-64' top='-5%' left='10%' delay={0} />
+					<FloatingShape color='bg-cyan-500' size='w-48 h-48' top='70%' left='80%' delay={5} />
+					<FloatingShape color='bg-blue-400' size='w-32 h-32' top='40%' left='-10%' delay={2} />
+				</>
+			)}
 
 			<Routes>
 				{/* Dashboard Routes */}
