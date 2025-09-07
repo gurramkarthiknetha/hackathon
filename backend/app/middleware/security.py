@@ -28,14 +28,14 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         # Content Security Policy
         csp_directives = [
             "default-src 'self'",
-            "style-src 'self' 'unsafe-inline'",
-            "script-src 'self'",
-            "img-src 'self' data: https:",
-            "connect-src 'self' ws: wss:",
-            "font-src 'self'",
+            "style-src 'self' 'unsafe-inline' https://crowd-recon.vercel.app",
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://crowd-recon.vercel.app",
+            "img-src 'self' data: https: blob:",
+            "connect-src 'self' ws: wss: https://crowd-recon.vercel.app https://hackathon-1-e29j.onrender.com",
+            "font-src 'self' https: data:",
             "object-src 'none'",
-            "media-src 'self' blob:",
-            "frame-src 'none'"
+            "media-src 'self' blob: https:",
+            "frame-src 'self' https://crowd-recon.vercel.app"
         ]
         response.headers["Content-Security-Policy"] = "; ".join(csp_directives)
         
@@ -159,21 +159,25 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 
 def setup_cors_middleware(app):
     """Configure CORS middleware"""
+    origins = [
+        "https://crowd-recon.vercel.app",
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5173"
+    ]
+    
+    if settings.environment == "development":
+        origins.append("http://localhost:8000")
+        origins.append("http://127.0.0.1:8000")
+    
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.cors_origins,
+        allow_origins=origins,
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-        allow_headers=[
-            "Content-Type",
-            "Authorization",
-            "X-Requested-With",
-            "Accept",
-            "Origin",
-            "Access-Control-Request-Method",
-            "Access-Control-Request-Headers"
-        ],
-        expose_headers=["*"]
+        allow_headers=["*"],
+        max_age=600  # Cache preflight requests for 10 minutes
     )
 
 

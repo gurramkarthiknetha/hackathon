@@ -9,6 +9,7 @@ from app.users.routes import router as users_router
 from app.ml.simple_routes import router as ml_router
 from app.monitoring.routes import router as monitoring_router
 from app.monitoring.camera_routes import router as camera_router
+from app.monitoring.test_routes import router as test_router
 
 # Create main API router
 api_router = APIRouter()
@@ -19,6 +20,7 @@ api_router.include_router(users_router)
 api_router.include_router(ml_router)
 api_router.include_router(monitoring_router)
 api_router.include_router(camera_router)
+api_router.include_router(test_router)
 
 # Additional routers will be added here as they are implemented:
 # api_router.include_router(notification_router)

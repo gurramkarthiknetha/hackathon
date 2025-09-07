@@ -19,6 +19,9 @@ from slowapi.util import get_remote_address
 router = APIRouter(prefix="/api/ml", tags=["ml-inference"])
 limiter = Limiter(key_func=get_remote_address)
 
+# Global detection cache for accuracy levels
+detection_cache = {}
+
 
 @router.post("/detect")
 async def detect_objects(
@@ -54,16 +57,76 @@ async def enhanced_multimodal_analysis(
     db: AsyncIOMotorDatabase = Depends(get_database),
     current_user = Depends(require_any_role)
 ):
-    """Enhanced multi-modal detection analysis"""
+    """Enhanced multi-modal detection analysis with caching for accuracy levels"""
     try:
         # Read and validate image
         contents = await file.read()
+        nparr = np.frombuffer(contents, np.uint8)
+        image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        
+        if image is None:
+            raise HTTPException(status_code=400, detail="Invalid image format")
         
         # Get enhanced detector and analyze
         detector = get_enhanced_detector()
         results = await detector.analyze_image(contents)
         
-        return JSONResponse(content=results)
+        # Also run standard object detection for comprehensive results
+        ml_service = InferenceService()
+        object_results = await ml_service.detect_objects(image)
+        
+        # Store results in cache for accuracy levels
+        camera_ids = ["system_camera", "iphone_camera"]
+        for i in range(10):
+            camera_ids.append(f"system_{i}")
+        
+        # Process detections for caching
+        detections = []
+        object_counts = {}
+        
+        if object_results and 'detections' in object_results:
+            for detection in object_results['detections']:
+                class_name = detection.get('class', detection.get('label', 'unknown'))
+                confidence = detection.get('confidence', detection.get('score', 0))
+                bbox = detection.get('bbox', detection.get('box', {}))
+                
+                object_counts[class_name] = object_counts.get(class_name, 0) + 1
+                
+                detections.append({
+                    "class": class_name,
+                    "confidence": confidence,
+                    "bbox": bbox
+                })
+        
+        person_count = object_counts.get("person", 0)
+        
+        # Cache detection data for all camera IDs
+        detection_data = {
+            "detections": detections,
+            "object_counts": object_counts,
+            "person_count": person_count,
+            "emergency_detected": results.get('detections', {}).get('fire', {}).get('detected', False),
+            "emergency_type": "fire" if results.get('detections', {}).get('fire', {}).get('detected') else None,
+            "risk_level": "high" if person_count > 5 else "low",
+            "timestamp": str(np.datetime64('now')),
+            "confidence_stats": {
+                "average": np.mean([d["confidence"] for d in detections]) if detections else 0,
+                "maximum": max([d["confidence"] for d in detections]) if detections else 0,
+                "minimum": min([d["confidence"] for d in detections]) if detections else 0
+            }
+        }
+        
+        for camera_id in camera_ids:
+            detection_cache[camera_id] = detection_data
+        
+        # Combine results
+        combined_results = {
+            "enhanced_multimodal": results,
+            "standard_ml": {"objects": object_results},
+            "success": True
+        }
+        
+        return JSONResponse(content=combined_results)
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Enhanced analysis failed: {str(e)}")
