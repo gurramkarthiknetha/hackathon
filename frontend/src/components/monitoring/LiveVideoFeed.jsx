@@ -178,9 +178,11 @@ const LiveVideoFeed = ({ selectedIncident, currentCamera: propCurrentCamera }) =
     console.log('Video dimensions:', video.videoWidth, 'x', video.videoHeight);
     console.log('Canvas dimensions:', canvas.width, 'x', canvas.height);
     
-    // Set canvas size to match video
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    // Set canvas size to match video dimensions
+    const videoWidth = video.videoWidth || 1280;
+    const videoHeight = video.videoHeight || 720;
+    canvas.width = videoWidth;
+    canvas.height = videoHeight;
     
     // Clear previous drawings
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -205,20 +207,20 @@ const LiveVideoFeed = ({ selectedIncident, currentCamera: propCurrentCamera }) =
         
         // Draw bounding box
         ctx.strokeStyle = strokeColor;
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 3;
         ctx.strokeRect(x, y, width, height);
         
         // Draw label background
-        const label = `${class_name} ${confidence.toFixed(2)}`;
-        ctx.font = '14px Arial';
+        const label = `${class_name} ${(confidence * 100).toFixed(0)}%`;
+        ctx.font = '16px Arial';
         const textWidth = ctx.measureText(label).width;
         
-        ctx.fillStyle = strokeColor.replace(')', ', 0.8)');
-        ctx.fillRect(x, y - 22, textWidth + 8, 22);
+        ctx.fillStyle = strokeColor + '80'; // Semi-transparent background
+        ctx.fillRect(x, y - 25, textWidth + 10, 25);
         
         // Draw label text
-        ctx.fillStyle = '#000000';
-        ctx.fillText(label, x + 4, y - 6);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(label, x + 5, y - 8);
       });
     }
     

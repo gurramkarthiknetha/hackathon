@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Event Monitor - Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #1e3a8a, #0891b2);
+            color: white;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, #60a5fa, #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .status {
+            font-size: 1.2rem;
+            margin: 20px 0;
+        }
+        .links {
+            margin-top: 30px;
+        }
+        .links a {
+            display: inline-block;
+            margin: 10px;
+            padding: 12px 24px;
+            background: rgba(59, 130, 246, 0.8);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        .links a:hover {
+            background: rgba(59, 130, 246, 1);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 AI Event Monitor</h1>
+        <div class="status">✅ System is running correctly!</div>
+        <p>Your AI-powered event monitoring platform is ready.</p>
+        
+        <div class="links">
+            <a href="/">Go to Main App</a>
+            <a href="/login">Login Page</a>
+            <a href="/signup">Sign Up</a>
+        </div>
+        
+        <div style="margin-top: 30px; font-size: 0.9rem; opacity: 0.8;">
+            <p>Backend: http://localhost:8000</p>
+            <p>Frontend: http://localhost:5174</p>
+        </div>
+    </div>
+</body>
+</html>

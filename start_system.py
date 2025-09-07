@@ -23,7 +23,7 @@ class SystemManager:
         
         # Check Python
         try:
-            result = subprocess.run([sys.executable, '--version'], capture_output=True, text=True)
+            result = subprocess.run(['python3', '--version'], capture_output=True, text=True)
             print(f"✅ Python: {result.stdout.strip()}")
         except Exception as e:
             print(f"❌ Python check failed: {e}")
@@ -37,16 +37,16 @@ class SystemManager:
             print(f"❌ Node.js not found: {e}")
             return False
         
-        # Check npm using WSL
+        # Check npm
         try:
-            result = subprocess.run(['wsl', 'npm', '--version'], capture_output=True, text=True)
+            result = subprocess.run(['npm', '--version'], capture_output=True, text=True)
             if result.returncode == 0:
-                print(f"✅ npm (WSL): {result.stdout.strip()}")
+                print(f"✅ npm: {result.stdout.strip()}")
             else:
-                print(f"❌ npm not found in WSL: {result.stderr}")
+                print(f"❌ npm not found: {result.stderr}")
                 return False
         except Exception as e:
-            print(f"❌ WSL npm check failed: {e}")
+            print(f"❌ npm check failed: {e}")
             return False
         
         return True
@@ -59,7 +59,7 @@ class SystemManager:
         
         try:
             result = subprocess.run([
-                sys.executable, "-m", "pip", "install", "-r", "requirements.txt"
+                "python3", "-m", "pip", "install", "-r", "requirements.txt"
             ], cwd=backend_dir, capture_output=True, text=True)
             
             if result.returncode == 0:
@@ -81,7 +81,7 @@ class SystemManager:
         
         try:
             result = subprocess.run([
-                'wsl', 'npm', 'install'
+                'npm', 'install'
             ], cwd=frontend_dir, capture_output=True, text=True)
             
             if result.returncode == 0:
@@ -104,7 +104,7 @@ class SystemManager:
         try:
             # Start FastAPI with uvicorn
             self.backend_process = subprocess.Popen([
-                sys.executable, "-m", "uvicorn", 
+                "python3", "-m", "uvicorn", 
                 "app.main:app", 
                 "--host", "0.0.0.0", 
                 "--port", "8000", 
@@ -125,9 +125,9 @@ class SystemManager:
         frontend_dir = Path(__file__).parent / "frontend"
         
         try:
-            # Start React dev server using WSL
+            # Start React dev server
             self.frontend_process = subprocess.Popen([
-                'wsl', 'npm', 'run', 'dev'
+                'npm', 'run', 'dev'
             ], cwd=frontend_dir)
             
             print("✅ React frontend started on http://localhost:5173")

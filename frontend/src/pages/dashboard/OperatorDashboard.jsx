@@ -26,6 +26,8 @@ import RealTimeAlerts from "../../components/monitoring/RealTimeAlerts";
 import InteractiveZoneMap from "../../components/monitoring/InteractiveZoneMap";
 import CommandCenter from "../../components/monitoring/CommandCenter";
 import IncidentTimeline from "../../components/monitoring/IncidentTimeline";
+import AccuracyLevels from "../../components/monitoring/AccuracyLevels";
+import CameraManager from "../../components/monitoring/CameraManager";
 import ActivityTestPanel from "../../components/test/ActivityTestPanel";
 
 const OperatorDashboard = () => {
@@ -33,6 +35,7 @@ const OperatorDashboard = () => {
 	const { sidebarOpen } = useSidebar();
 	const [loading, setLoading] = useState(false);
 	const [selectedIncident, setSelectedIncident] = useState(null);
+	const [selectedCamera, setSelectedCamera] = useState(null);
 	const [timelineFilter, setTimelineFilter] = useState({
 		startDate: new Date(Date.now() - 24 * 60 * 60 * 1000), // Last 24 hours
 		endDate: new Date(),
@@ -87,6 +90,10 @@ const OperatorDashboard = () => {
 
 	const handleTimelineFilter = (newFilter) => {
 		setTimelineFilter(prev => ({ ...prev, ...newFilter }));
+	};
+
+	const handleCameraSelect = (cameraId) => {
+		setSelectedCamera(cameraId);
 	};
 
 	const handleTestModalNotification = async () => {
@@ -186,45 +193,59 @@ const OperatorDashboard = () => {
 			</div>
 
 			{/* Main Dashboard Grid */}
-			<div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-				{/* Live Video Feed - Top Left */}
+			<div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+				{/* Live Video Feed - Left Column */}
 				<motion.div
 					initial={{ opacity: 0, x: -20 }}
 					animate={{ opacity: 1, x: 0 }}
 					transition={{ duration: 0.5, delay: 0.4 }}
-					className="bg-gray-800/60 backdrop-blur-xl rounded-xl border border-gray-700/50 overflow-hidden"
+					className="lg:col-span-2 bg-gray-800/60 backdrop-blur-xl rounded-xl border border-gray-700/50 overflow-hidden"
 				>
-					<LiveVideoFeed selectedIncident={selectedIncident} />
+					<LiveVideoFeed selectedIncident={selectedIncident} currentCamera={selectedCamera} />
 				</motion.div>
 
-				{/* Real-Time Alerts - Top Right */}
+				{/* Right Column - Camera Manager & Accuracy Levels */}
+				<div className="space-y-4">
+					{/* Camera Manager */}
+					<motion.div
+						initial={{ opacity: 0, x: 20 }}
+						animate={{ opacity: 1, x: 0 }}
+						transition={{ duration: 0.5, delay: 0.5 }}
+					>
+						<CameraManager onCameraSelect={handleCameraSelect} selectedCamera={selectedCamera} />
+					</motion.div>
+
+					{/* Accuracy Levels */}
+					<motion.div
+						initial={{ opacity: 0, x: 20 }}
+						animate={{ opacity: 1, x: 0 }}
+						transition={{ duration: 0.5, delay: 0.6 }}
+					>
+						<AccuracyLevels selectedCamera={selectedCamera} />
+					</motion.div>
+				</div>
+			</div>
+
+			{/* Secondary Dashboard Grid */}
+			<div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+				{/* Real-Time Alerts */}
 				<motion.div
-					initial={{ opacity: 0, x: 20 }}
+					initial={{ opacity: 0, x: -20 }}
 					animate={{ opacity: 1, x: 0 }}
-					transition={{ duration: 0.5, delay: 0.5 }}
+					transition={{ duration: 0.5, delay: 0.7 }}
 					className="bg-gray-800/60 backdrop-blur-xl rounded-xl border border-gray-700/50 overflow-hidden"
 				>
 					<RealTimeAlerts onIncidentSelect={handleIncidentSelect} />
 				</motion.div>
 
-				{/* Interactive Zone Map - Bottom Left */}
-				<motion.div
-					initial={{ opacity: 0, x: -20 }}
-					animate={{ opacity: 1, x: 0 }}
-					transition={{ duration: 0.5, delay: 0.6 }}
-					className="bg-gray-800/60 backdrop-blur-xl rounded-xl border border-gray-700/50 overflow-hidden"
-				>
-					<InteractiveZoneMap onIncidentSelect={handleIncidentSelect} selectedIncident={selectedIncident} />
-				</motion.div>
-
-				{/* Command Center - Bottom Right */}
+				{/* Interactive Zone Map */}
 				<motion.div
 					initial={{ opacity: 0, x: 20 }}
 					animate={{ opacity: 1, x: 0 }}
-					transition={{ duration: 0.5, delay: 0.7 }}
+					transition={{ duration: 0.5, delay: 0.8 }}
 					className="bg-gray-800/60 backdrop-blur-xl rounded-xl border border-gray-700/50 overflow-hidden"
 				>
-					<CommandCenter />
+					<InteractiveZoneMap onIncidentSelect={handleIncidentSelect} selectedIncident={selectedIncident} />
 				</motion.div>
 			</div>
 
