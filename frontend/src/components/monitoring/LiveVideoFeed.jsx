@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from "react";
+import notificationService from "../../services/notificationService";
+import { toast } from "react-hot-toast";
 
 const LiveVideoFeed = ({ selectedIncident, currentCamera: propCurrentCamera }) => {
   console.log('LiveVideoFeed rendering with props:', { selectedIncident, propCurrentCamera });
@@ -13,6 +15,12 @@ const LiveVideoFeed = ({ selectedIncident, currentCamera: propCurrentCamera }) =
   const [aiStatus, setAiStatus] = useState('idle');
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
+  const alarmAudioRef = useRef(null);
+  const isAlarmPlayingRef = useRef(false);
+  const hasUserInteractedRef = useRef(false);
+  const pendingAlarmPlayRef = useRef(false);
+  const isStampedeAboveThresholdRef = useRef(false);
+  const lastStampedeAlertAtRef = useRef(0);
 
   // Debug logging
   console.log('LiveVideoFeed state:', { 
@@ -25,6 +33,229 @@ const LiveVideoFeed = ({ selectedIncident, currentCamera: propCurrentCamera }) =
   // Video streaming service URLs
   const VIDEO_SERVICE_URL = import.meta.env.VITE_VIDEO_SERVICE_URL || 'http://localhost:5001';
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+  const STAMPEDE_ALERT_THRESHOLD = 0.8;
+  const STAMPEDE_ALERT_COOLDOWN_MS = 15000;
+
+  const normalizeConfidence = (confidence) => {
+    if (typeof confidence !== 'number' || Number.isNaN(confidence)) return 0;
+    if (confidence > 1) return Math.min(confidence / 100, 1);
+    return Math.max(confidence, 0);
+  };
+
+  const getFireConfidence = (results) => {
+    if (!results) return 0;
+
+    let maxFireConfidence = 0;
+
+    const emergencyDetectionSets = [
+      results.enhanced_multimodal?.detections,
+      results.detections
+    ];
+
+    emergencyDetectionSets.forEach((detections) => {
+      if (!detections || typeof detections !== 'object') return;
+
+      Object.entries(detections).forEach(([key, detection]) => {
+        if (!key || !key.toLowerCase().includes('fire')) return;
+        if (!detection || typeof detection !== 'object') return;
+
+        const confidence = normalizeConfidence(detection.confidence);
+        maxFireConfidence = Math.max(maxFireConfidence, confidence);
+      });
+    });
+
+    if (results.standard_ml?.objects && Array.isArray(results.standard_ml.objects)) {
+      results.standard_ml.objects.forEach((obj) => {
+        if (!obj?.class_name || !obj.class_name.toLowerCase().includes('fire')) return;
+        const confidence = normalizeConfidence(obj.confidence);
+        maxFireConfidence = Math.max(maxFireConfidence, confidence);
+      });
+    }
+
+    return maxFireConfidence;
+  };
+
+  const getStampedeConfidence = (results) => {
+    if (!results) return 0;
+
+    let maxStampedeConfidence = 0;
+
+    const detectionSets = [
+      results.enhanced_multimodal?.detections,
+      results.detections
+    ];
+
+    detectionSets.forEach((detections) => {
+      if (!detections || typeof detections !== 'object') return;
+
+      Object.entries(detections).forEach(([key, detection]) => {
+        if (!key || !key.toLowerCase().includes('stampede')) return;
+        if (!detection || typeof detection !== 'object') return;
+
+        const confidence = normalizeConfidence(detection.confidence);
+        maxStampedeConfidence = Math.max(maxStampedeConfidence, confidence);
+      });
+    });
+
+    if (results.standard_ml?.objects && Array.isArray(results.standard_ml.objects)) {
+      results.standard_ml.objects.forEach((obj) => {
+        if (!obj?.class_name || !obj.class_name.toLowerCase().includes('stampede')) return;
+        const confidence = normalizeConfidence(obj.confidence);
+        maxStampedeConfidence = Math.max(maxStampedeConfidence, confidence);
+      });
+    }
+
+    return maxStampedeConfidence;
+  };
+
+  const triggerStampedeAlert = async (confidence) => {
+    const confidencePercent = Math.round(confidence * 100);
+
+    toast.error(`Stampede alert: ${confidencePercent}% confidence`, {
+      duration: 5000,
+      id: 'stampede-threshold-alert'
+    });
+
+    try {
+      await notificationService.sendModalNotification({
+        type: 'incident',
+        severity: 'critical',
+        title: 'Stampede Risk Detected',
+        message: `Stampede detection confidence reached ${confidencePercent}%. Immediate action required.`,
+        actionUrl: '/dashboard/operator/alerts',
+        metadata: {
+          detectionType: 'stampede',
+          confidence: confidencePercent
+        }
+      });
+      console.log(`Stampede alert triggered at ${confidencePercent}% confidence`);
+    } catch (error) {
+      console.error('Failed to trigger stampede alert:', error);
+    }
+  };
+
+  const playAlarm = async () => {
+    const alarmAudio = alarmAudioRef.current;
+    if (!alarmAudio || isAlarmPlayingRef.current) return;
+
+    try {
+      alarmAudio.currentTime = 0;
+      await alarmAudio.play();
+      isAlarmPlayingRef.current = true;
+      pendingAlarmPlayRef.current = false;
+      console.log('Emergency alarm started');
+    } catch (error) {
+      pendingAlarmPlayRef.current = true;
+      console.error('Emergency alarm playback blocked or failed:', error);
+    }
+  };
+
+  const stopAlarm = () => {
+    const alarmAudio = alarmAudioRef.current;
+    if (!alarmAudio) return;
+
+    alarmAudio.pause();
+    alarmAudio.currentTime = 0;
+    isAlarmPlayingRef.current = false;
+    pendingAlarmPlayRef.current = false;
+  };
+
+  useEffect(() => {
+    if (!alarmAudioRef.current) {
+      const alarmAudio = new Audio('/Alarm.mp3');
+      alarmAudio.loop = true;
+      alarmAudio.preload = 'auto';
+      alarmAudio.volume = 1;
+      alarmAudioRef.current = alarmAudio;
+    }
+
+    const alarmAudio = alarmAudioRef.current;
+
+    const handlePlay = () => {
+      isAlarmPlayingRef.current = true;
+      pendingAlarmPlayRef.current = false;
+    };
+
+    const handlePause = () => {
+      isAlarmPlayingRef.current = false;
+    };
+
+    const handleError = (error) => {
+      isAlarmPlayingRef.current = false;
+      console.error('Fire alarm audio error:', error);
+    };
+
+    const unlockAudio = () => {
+      hasUserInteractedRef.current = true;
+      if (pendingAlarmPlayRef.current) {
+        playAlarm();
+      }
+    };
+
+    alarmAudio.addEventListener('play', handlePlay);
+    alarmAudio.addEventListener('pause', handlePause);
+    alarmAudio.addEventListener('error', handleError);
+
+    window.addEventListener('pointerdown', unlockAudio);
+    window.addEventListener('keydown', unlockAudio);
+    window.addEventListener('touchstart', unlockAudio);
+
+    return () => {
+      window.removeEventListener('pointerdown', unlockAudio);
+      window.removeEventListener('keydown', unlockAudio);
+      window.removeEventListener('touchstart', unlockAudio);
+
+      alarmAudio.removeEventListener('play', handlePlay);
+      alarmAudio.removeEventListener('pause', handlePause);
+      alarmAudio.removeEventListener('error', handleError);
+
+      alarmAudio.pause();
+      alarmAudio.currentTime = 0;
+      isAlarmPlayingRef.current = false;
+      pendingAlarmPlayRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!detectionResults) {
+      stopAlarm();
+      isStampedeAboveThresholdRef.current = false;
+      return;
+    }
+
+    const fireConfidence = getFireConfidence(detectionResults);
+    const isFireAtMaximumConfidence = fireConfidence >= 0.999;
+    const stampedeConfidence = getStampedeConfidence(detectionResults);
+    const isStampedeAboveThreshold = stampedeConfidence >= STAMPEDE_ALERT_THRESHOLD;
+
+    const shouldPlayEmergencyAlarm = isFireAtMaximumConfidence || isStampedeAboveThreshold;
+
+    if (shouldPlayEmergencyAlarm) {
+      if (hasUserInteractedRef.current) {
+        playAlarm();
+      } else {
+        pendingAlarmPlayRef.current = true;
+      }
+    } else {
+      stopAlarm();
+    }
+
+    if (!isStampedeAboveThreshold) {
+      isStampedeAboveThresholdRef.current = false;
+      return;
+    }
+
+    const now = Date.now();
+    const hasCrossedThreshold = !isStampedeAboveThresholdRef.current;
+    const cooldownElapsed = now - lastStampedeAlertAtRef.current >= STAMPEDE_ALERT_COOLDOWN_MS;
+
+    if (hasCrossedThreshold || cooldownElapsed) {
+      lastStampedeAlertAtRef.current = now;
+      triggerStampedeAlert(stampedeConfidence);
+    }
+
+    isStampedeAboveThresholdRef.current = true;
+  }, [detectionResults]);
 
   // iPhone camera functions
   const startDeviceCamera = async (deviceId = null) => {
